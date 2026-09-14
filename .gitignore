@@ -1,4 +1,5 @@
-# Large binary files, ISOs, ROM archives
+# Large binary files, ISOs, ROM archives, and release tarballs
+*.tar.gz
 *.zip
 *.7z
 *.rar
