@@ -3,109 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Gamerr - Video Game Collection & Scraper{% endblock %}</title>
+    <title>{% block title %}Gamerr - Video Game Collection & Management{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="arr-body">
-    <!-- Sonarr/Radarr Top Navigation Bar -->
-    <header class="arr-top-navbar">
-        <div class="arr-navbar-brand">
-            <a href="{{ url_for('web.index') }}" class="arr-brand-link">
-                <i class="fas fa-gamepad arr-brand-icon"></i>
-                <span class="arr-brand-title">Gamerr</span>
-            </a>
-        </div>
-
-        <nav class="arr-primary-nav">
-            <a href="{{ url_for('web.index') }}" class="arr-nav-item {% if request.endpoint == 'web.index' %}active{% endif %}">
-                <i class="fas fa-chart-pie"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ url_for('web.library') }}" class="arr-nav-item {% if request.endpoint == 'web.library' %}active{% endif %}">
-                <i class="fas fa-gamepad"></i>
-                <span>Library</span>
-            </a>
-            <a href="{{ url_for('web.catalog') }}" class="arr-nav-item {% if request.endpoint in ['web.catalog', 'web.catalog_game'] %}active{% endif %}">
-                <i class="fas fa-plus-circle"></i>
-                <span>Add Game</span>
-            </a>
-            <a href="{{ url_for('web.wanted') }}" class="arr-nav-item {% if request.endpoint == 'web.wanted' %}active{% endif %}">
-                <i class="fas fa-bookmark"></i>
-                <span>Wanted</span>
-            </a>
-            <a href="{{ url_for('web.downloads') }}" class="arr-nav-item {% if request.endpoint == 'web.downloads' %}active{% endif %}">
-                <i class="fas fa-tasks"></i>
-                <span>Activity</span>
-            </a>
-            <a href="{{ url_for('web.import_roms') }}" class="arr-nav-item {% if request.endpoint == 'web.import_roms' %}active{% endif %}">
-                <i class="fas fa-file-import"></i>
-                <span>Import</span>
-            </a>
-            <a href="{{ url_for('web.settings') }}" class="arr-nav-item {% if request.endpoint == 'web.settings' %}active{% endif %}">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-        </nav>
-
-        <div class="arr-navbar-right">
-            <!-- Global Live Search Input -->
-            <div class="arr-global-search">
-                <i class="fas fa-search arr-search-icon"></i>
-                <input type="text" id="globalSearchInput" placeholder="Search games (Ctrl+K)..." autocomplete="off">
-            </div>
-
-            <!-- Health Status Indicator -->
-            <div class="arr-health-badge" title="System Operational">
-                <span class="arr-status-dot online"></span>
-                <span class="arr-health-text">System</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- App Container -->
-    <div class="arr-app-wrapper">
-        <!-- Sub-Header Toolbar (Sonarr/Radarr Filter & Action Bar) -->
-        <div class="arr-sub-toolbar">
-            <div class="arr-toolbar-left">
-                <div class="arr-breadcrumb">
-                    <span class="arr-page-heading">{% block page_title %}Gamerr{% endblock %}</span>
-                    <span class="arr-page-subtext">{% block breadcrumb %}Video Game Collection & Scraper{% endblock %}</span>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-gamepad"></i>
+                    <h1>Gamerr</h1>
                 </div>
+                <div class="tagline">Video Game Collection Manager</div>
             </div>
-
-            <div class="arr-toolbar-right">
-                {% block toolbar_actions %}
-                <!-- Default Toolbar Items (Overridden in views) -->
-                <div class="arr-view-toggle">
-                    <a href="?view=posters" class="arr-view-btn {% if request.args.get('view', 'posters') == 'posters' %}active{% endif %}" title="Poster Grid View">
-                        <i class="fas fa-th-large"></i>
-                    </a>
-                    <a href="?view=table" class="arr-view-btn {% if request.args.get('view') == 'table' %}active{% endif %}" title="Table View">
-                        <i class="fas fa-bars"></i>
-                    </a>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('web.index') }}" class="nav-item {% if request.endpoint == 'web.index' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('web.library') }}" class="nav-item {% if request.endpoint == 'web.library' %}active{% endif %}">
+                    <i class="fas fa-gamepad"></i>
+                    <span>Library</span>
+                </a>
+                <a href="{{ url_for('web.wanted') }}" class="nav-item {% if request.endpoint == 'web.wanted' %}active{% endif %}">
+                    <i class="fas fa-search"></i>
+                    <span>Wanted</span>
+                </a>
+                <a href="{{ url_for('web.downloads') }}" class="nav-item {% if request.endpoint == 'web.downloads' %}active{% endif %}">
+                    <i class="fas fa-download"></i>
+                    <span>Downloads</span>
+                </a>
+                <a href="{{ url_for('web.catalog') }}" class="nav-item {% if request.endpoint == 'web.catalog' %}active{% endif %}">
+                    <i class="fas fa-th-large"></i>
+                    <span>Catalog</span>
+                </a>
+                <a href="{{ url_for('web.import_roms') }}" class="nav-item {% if request.endpoint == 'web.import_roms' %}active{% endif %}">
+                    <i class="fas fa-file-import"></i>
+                    <span>Import ROMs</span>
+                </a>
+                <div class="nav-divider"></div>
+                <a href="{{ url_for('web.settings') }}" class="nav-item {% if request.endpoint == 'web.settings' %}active{% endif %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-indicator online"></div>
+                    <span>System Online</span>
                 </div>
-                {% endblock %}
+                <div class="version">v0.1.0</div>
             </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <div class="page-title">
+                        <h2>{% block page_title %}{% endblock %}</h2>
+                        <div class="breadcrumb">{% block breadcrumb %}{% endblock %}</div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="global-search-input" placeholder="Search games..." class="search-input">
+                    </div>
+                    <div class="header-actions">
+                        <button id="notifications-btn" class="btn btn-icon" title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge" id="notifications-badge" style="display: none;">0</span>
+                        </button>
+                        <button id="activity-btn" class="btn btn-icon" title="Activity">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+            
+            <!-- Footer -->
+            <footer class="content-footer">
+                <div class="footer-left">
+                    <span>Gamerr &copy; 2026</span>
+                    <span class="divider">|</span>
+                    <span>Video Game Collection & Scraper</span>
+                </div>
+                <div class="footer-right">
+                    <span class="status-text">
+                        <span class="status-dot online"></span>
+                        Status: <strong>OPERATIONAL</strong>
+                    </span>
+                </div>
+            </footer>
         </div>
-
-        <!-- Main Content Body -->
-        <main class="arr-main-content">
-            {% block content %}{% endblock %}
-        </main>
-
-        <!-- Footer -->
-        <footer class="arr-footer">
-            <div class="arr-footer-info">
-                <span>Gamerr &copy; 2026</span>
-                <span class="divider">•</span>
-                <span>Sonarr/Radarr (*arr) Architecture for Retro & PC Games</span>
-            </div>
-        </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.0.2"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.0.1"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
