@@ -446,12 +446,15 @@ def save_settings():
 def test_prowlarr_connection():
     """Test Prowlarr connection"""
     data = request.get_json(silent=True) or {}
-    url = data.get('prowlarr_url', '')
-    api_key = data.get('prowlarr_api_key', '')
+    url = data.get('prowlarr_url', '') or data.get('url', '')
+    api_key = data.get('prowlarr_api_key', '') or data.get('api_key', '')
+
+    if not url:
+        return jsonify({'success': False, 'message': 'Prowlarr URL is required'}), 400
 
     import requests
     try:
-        test_url = f"{url}/api/v1/system/status"
+        test_url = f"{url.rstrip('/')}/api/v1/system/status"
         headers = {'X-Api-Key': api_key} if api_key else {}
         response = requests.get(test_url, headers=headers, timeout=5)
         
@@ -476,16 +479,17 @@ def test_prowlarr_connection():
 def test_qbittorrent_connection():
     """Test qBittorrent connection"""
     data = request.get_json(silent=True) or {}
-    url = data.get('qbittorrent_url', '')
-    username = data.get('qbittorrent_username', '')
-    password = data.get('qbittorrent_password', '')
+    url = data.get('qbittorrent_url', '') or data.get('url', '')
+    username = data.get('qbittorrent_username', '') or data.get('username', '')
+    password = data.get('qbittorrent_password', '') or data.get('password', '')
+
+    if not url:
+        return jsonify({'success': False, 'message': 'qBittorrent URL is required'}), 400
 
     try:
         from qbittorrent import Client
         qb = Client(url)
         qb.login(username, password)
-        
-        # Try to get version info
         version = qb.qbittorrent_version
         return jsonify({
             'success': True,
@@ -497,6 +501,50 @@ def test_qbittorrent_connection():
             'success': False,
             'message': f'Failed to connect to qBittorrent: {str(e)}'
         })
+
+@api_bp.route('/settings/test/transmission', methods=['POST'])
+def test_transmission_connection():
+    """Test Transmission connection"""
+    data = request.get_json(silent=True) or {}
+    url = data.get('transmission_url', '') or data.get('url', '')
+    username = data.get('transmission_username', '') or data.get('username', '')
+    password = data.get('transmission_password', '') or data.get('password', '')
+
+    if not url:
+        return jsonify({'success': False, 'message': 'Transmission URL is required'}), 400
+
+    import requests
+    try:
+        rpc_url = f"{url.rstrip('/')}/transmission/rpc"
+        auth = (username, password) if username and password else None
+        res = requests.get(rpc_url, auth=auth, timeout=5)
+        if res.status_code in (200, 409):
+            return jsonify({'success': True, 'message': 'Transmission connection successful'})
+        return jsonify({'success': False, 'message': f'Transmission returned status code {res.status_code}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to connect to Transmission: {str(e)}'})
+
+@api_bp.route('/settings/test/sabnzbd', methods=['POST'])
+def test_sabnzbd_connection():
+    """Test SABnzbd connection"""
+    data = request.get_json(silent=True) or {}
+    url = data.get('sabnzbd_url', '') or data.get('url', '')
+    api_key = data.get('sabnzbd_api_key', '') or data.get('api_key', '')
+
+    if not url:
+        return jsonify({'success': False, 'message': 'SABnzbd URL is required'}), 400
+
+    import requests
+    try:
+        api_endpoint = f"{url.rstrip('/')}/api?mode=version&apikey={api_key}&output=json"
+        res = requests.get(api_endpoint, timeout=5)
+        if res.status_code == 200:
+            version = res.json().get('version', 'unknown')
+            return jsonify({'success': True, 'message': f'SABnzbd connected successfully (v{version})'})
+        return jsonify({'success': False, 'message': f'SABnzbd returned status code {res.status_code}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to connect to SABnzbd: {str(e)}'})
+
 
 @api_bp.route('/settings/test/igdb', methods=['POST'])
 def test_igdb_connection():
