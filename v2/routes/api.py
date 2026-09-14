@@ -2,7 +2,7 @@
 API routes for Romarr
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, current_app, send_file
 
 from models.unified_schema import Game
@@ -374,7 +374,7 @@ def health_check():
         'status': 'healthy',
         'service': 'romarr',
         'version': '0.1.0',
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': datetime.now(timezone.utc).isoformat()
     })
 
 @api_bp.route('/system/storage', methods=['GET'])
@@ -1101,7 +1101,11 @@ def upload_rom_files():
             shutil.move(dest_path, final_path)
             dest_path = final_path
 
-        game = Game.query.filter_by(title=detected_title, platform=platform).first()
+        from models.unified_schema import Platform
+        game = Game.query.filter(
+            Game.title == detected_title,
+            Game.platforms.any((Platform.name.ilike(platform or '')) | (Platform.slug == (platform or '').lower()))
+        ).first()
         if not game:
             game = Game(
                 title=detected_title,
@@ -1271,7 +1275,11 @@ def process_import_roms():
         path = r.get('file_path', '')
         size = r.get('file_size', 0)
 
-        existing = Game.query.filter_by(title=title, platform=platform).first()
+        from models.unified_schema import Platform
+        existing = Game.query.filter(
+            Game.title == title,
+            Game.platforms.any((Platform.name.ilike(platform or '')) | (Platform.slug == (platform or '').lower()))
+        ).first()
         if existing:
             skipped += 1
         else:

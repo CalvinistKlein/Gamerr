@@ -135,6 +135,14 @@ class TestRomarrIntegration(unittest.TestCase):
             self.assertTrue(proc_data['success'])
             self.assertEqual(proc_data['imported'], 1)
 
+            # 3. Process second time -> must skip
+            res2 = self.client.post('/api/import/process', data=json.dumps({'roms': scan_data['roms']}), content_type='application/json')
+            self.assertEqual(res2.status_code, 200)
+            proc_data2 = res2.get_json()
+            self.assertTrue(proc_data2['success'])
+            self.assertEqual(proc_data2['imported'], 0)
+            self.assertEqual(proc_data2['skipped'], 1)
+
     def test_generation_and_decade_filtering_with_pc_titles(self):
         """Verify cross-generation mapping includes console and PC titles from that era"""
         # 1. Gen 4 filter should return 200 and include both SNES and PC (DOS) titles
