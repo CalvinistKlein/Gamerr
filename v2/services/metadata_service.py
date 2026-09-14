@@ -218,3 +218,20 @@ class MetadataService:
                 item_copy.setdefault('id', game_id + 1)
                 return item_copy
         return None
+
+    @classmethod
+    def get_metadata(cls, title: str, platform: str = None) -> Optional[Dict]:
+        """Fetch metadata dictionary for a specific game title and platform"""
+        if not title:
+            return None
+        res = cls.search_games(query=title, platform=platform, per_page=1)
+        results = res.get('results', [])
+        if results:
+            return results[0]
+        if platform:
+            res = cls.search_games(query=title, per_page=1)
+            results = res.get('results', [])
+            if results:
+                return results[0]
+        return None
+

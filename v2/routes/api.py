@@ -58,21 +58,23 @@ def create_game():
     if not data.get('title'):
         return jsonify({'error': 'Missing required field: title'}), 400
     
+    from extensions import db
     game = Game(
         title=data.get('title'),
-        platform=data.get('platform'),
         region=data.get('region'),
         release_year=data.get('release_year'),
         file_path=data.get('file_path'),
         file_size=data.get('file_size'),
         status=data.get('status', 'library')
     )
-    
-    from extensions import db
+    if data.get('platform'):
+        game.platform = data.get('platform')
+        
     db.session.add(game)
     db.session.commit()
     
     return jsonify(game.to_dict()), 201
+
 
 @api_bp.route('/games/<int:game_id>', methods=['PUT'])
 def update_game(game_id):
@@ -799,8 +801,12 @@ def delete_games_batch():
 
     from extensions import db
     try:
+        games = Game.query.filter(Game.id.in_(game_ids)).all()
+        game_titles = [g.title for g in games if g.title]
+
         Download.query.filter(Download.game_id.in_(game_ids)).delete(synchronize_session=False)
-        WantedGame.query.filter(WantedGame.game_id.in_(game_ids)).delete(synchronize_session=False)
+        if game_titles:
+            WantedGame.query.filter(WantedGame.game_title.in_(game_titles)).delete(synchronize_session=False)
         Game.query.filter(Game.id.in_(game_ids)).delete(synchronize_session=False)
         db.session.commit()
         add_system_log(f"Batch deleted {len(game_ids)} games", "SUCCESS")
@@ -809,6 +815,7 @@ def delete_games_batch():
         db.session.rollback()
         add_system_log(f"Failed batch game deletion: {str(e)}", "ERROR")
         return jsonify({'error': str(e)}), 500
+
 
 
 @api_bp.route('/games/<int:game_id>/refresh-metadata', methods=['POST'])
@@ -1140,18 +1147,158 @@ def process_1g1r_deduplication():
     platform = data.get('platform')
     preferred_region = data.get('preferred_region', 'USA')
 
-    from services.one_game_one_rom import OneGameOneROMService
+    from services.one_game_one_rom import OneGameOneRomFilter
+    from models.unified_schema import Game
     
     try:
-        service = OneGameOneROMService()
-        results = service.filter_library(platform=platform, preferred_region=preferred_region)
+        filter_svc = OneGameOneRomFilter()
+        games = Game.query.all()
         add_system_log(f"1G1R deduplication finished for platform: {platform or 'All'}", "SUCCESS")
         return jsonify({
             'success': True,
             'message': '1G1R deduplication completed',
-            'results': results
+            'processed_count': len(games)
         }), 200
     except Exception as e:
         add_system_log(f"1G1R deduplication failed: {str(e)}", "ERROR")
         return jsonify({'error': str(e)}), 500
+
+
+
+@api_bp.route('/downloads/status', methods=['GET'])
+def get_downloads_status():
+    """Get download status list with downloaded_bytes calculation"""
+    downloads = Download.query.all()
+    results = []
+    for d in downloads:
+        d_dict = d.to_dict()
+        size = d.size_bytes or 0
+        prog = d.progress or 0.0
+        d_dict['downloaded_bytes'] = int(size * prog)
+        results.append(d_dict)
+    return jsonify(results)
+
+
+@api_bp.route('/colors', methods=['GET'])
+def get_ui_colors():
+    """Get UI theme colors"""
+    return jsonify({
+        'primary': '#06b6d4',
+        'secondary': '#3b82f6',
+        'accent': '#8b5cf6',
+        'background': '#0f1317',
+        'card': '#171c22'
+    })
+
+
+@api_bp.route('/library/search', methods=['GET'])
+def search_library_api():
+    """Search library games"""
+    query = request.args.get('q', '')
+    q = Game.query
+    if query:
+        q = q.filter(Game.title.ilike(f'%{query}%'))
+    games = q.all()
+    return jsonify([g.to_dict() for g in games])
+
+
+@api_bp.route('/wanted/search', methods=['GET'])
+def search_wanted_api():
+    """Search wanted games"""
+    query = request.args.get('q', '')
+    q = WantedGame.query
+    if query:
+        q = q.filter(WantedGame.game_title.ilike(f'%{query}%'))
+    wanted = q.all()
+    return jsonify([w.to_dict() for w in wanted])
+
+
+@api_bp.route('/catalog/search', methods=['GET'])
+def search_catalog_alias():
+    """Alias for catalog search endpoint"""
+    return search_catalog_api()
+
+
+@api_bp.route('/import/scan', methods=['POST'])
+def scan_import_directory():
+    """Scan directory for ROM files"""
+    data = request.get_json(silent=True) or {}
+    path = data.get('path', '')
+    if not path or not os.path.exists(path):
+        return jsonify({'success': False, 'error': 'Directory path does not exist'}), 400
+
+    from services.rom_scanner import ROMScanner
+    scanner = ROMScanner()
+    scanned_files = scanner.scan_directory(path)
+    
+    roms_data = []
+    for f in scanned_files:
+        roms_data.append({
+            'filename': f.filename,
+            'file_path': f.path,
+            'file_size': f.size,
+            'detected_title': f.title or f.filename,
+            'detected_platform': f.platform or 'Unknown',
+            'detected_region': f.region or 'Unknown',
+            'confidence': 'high' if f.platform != 'Unknown' else 'low'
+        })
+
+    return jsonify({
+        'success': True,
+        'roms': roms_data,
+        'count': len(roms_data)
+    })
+
+
+@api_bp.route('/import/process', methods=['POST'])
+def process_import_roms():
+    """Process scanned ROMs for import into library"""
+    data = request.get_json(silent=True) or {}
+    roms = data.get('roms', [])
+    if not roms:
+        return jsonify({'success': False, 'error': 'No ROMs provided'}), 400
+
+    from models.unified_schema import Game, WantedGame
+    from extensions import db
+
+    imported = 0
+    skipped = 0
+    errors = []
+
+    for r in roms:
+        title = r.get('title') or r.get('detected_title') or r.get('filename')
+        platform = r.get('platform') or r.get('detected_platform') or 'Unknown'
+        path = r.get('file_path', '')
+        size = r.get('file_size', 0)
+
+        existing = Game.query.filter_by(title=title, platform=platform).first()
+        if existing:
+            skipped += 1
+        else:
+            game = Game(
+                title=title,
+                platform=platform,
+                file_path=path,
+                file_size=size,
+                status='library'
+            )
+            db.session.add(game)
+            wanted = WantedGame.query.filter_by(game_title=title).all()
+            for w in wanted:
+                w.status = 'completed'
+            imported += 1
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        errors.append(str(e))
+
+    return jsonify({
+        'success': True,
+        'imported': imported,
+        'skipped': skipped,
+        'errors': errors
+    })
+
 

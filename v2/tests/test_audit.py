@@ -21,10 +21,16 @@ class TestFullSystemAudit(unittest.TestCase):
         cls.app = create_app()
         cls.app.config['TESTING'] = True
         cls.client = cls.app.test_client()
-        with cls.app.app_context():
-            db.create_all()
+    def setUp(self):
+        with self.app.app_context():
+            db.session.remove()
+
+    def tearDown(self):
+        with self.app.app_context():
+            db.session.remove()
 
     def test_all_web_routes_render(self):
+
         """Verify all HTML web routes render successfully (200 OK)"""
         web_routes = [
             '/',
@@ -150,6 +156,49 @@ class TestFullSystemAudit(unittest.TestCase):
                 res = self.client.get(f)
                 self.assertEqual(res.status_code, 200)
 
+    def test_new_romarr_features_endpoints(self):
+        """Verify all newly ported Romarr feature API endpoints"""
+        # 1. Test /api/logs and /api/activity
+        res = self.client.get('/api/logs')
+        self.assertEqual(res.status_code, 200)
+        self.assertIsInstance(json.loads(res.data), list)
+
+        res = self.client.get('/api/activity')
+        self.assertEqual(res.status_code, 200)
+        self.assertIsInstance(json.loads(res.data), list)
+
+        # 2. Test /api/database/export
+        res = self.client.get('/api/database/export')
+        self.assertIn(res.status_code, [200, 404])
+
+        # 3. Test /api/library/1g1r/process
+        res = self.client.post('/api/library/1g1r/process', data=json.dumps({'platform': 'snes'}), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+
+        # 4. Test /api/games/batch
+        with self.app.app_context():
+            db.session.rollback()
+            g = Game(title="Batch Delete Test Game", platform="SNES")
+            db.session.add(g)
+            db.session.commit()
+            gid = g.id
+
+        res = self.client.delete('/api/games/batch', data=json.dumps({'game_ids': [gid]}), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+
+        # 5. Test /api/games/<id>/refresh-metadata
+        with self.app.app_context():
+            db.session.rollback()
+            g2 = Game(title="Chrono Trigger", platform="SNES")
+            db.session.add(g2)
+            db.session.commit()
+            g2_id = g2.id
+
+        res = self.client.post(f'/api/games/{g2_id}/refresh-metadata')
+        self.assertEqual(res.status_code, 200)
+
+
 
 if __name__ == '__main__':
     unittest.main()
+

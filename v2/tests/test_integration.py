@@ -22,7 +22,16 @@ class TestRomarrIntegration(unittest.TestCase):
         cls.app.config['TESTING'] = True
         cls.client = cls.app.test_client()
 
+    def setUp(self):
+        with self.app.app_context():
+            db.session.remove()
+
+    def tearDown(self):
+        with self.app.app_context():
+            db.session.remove()
+
     def test_web_routes_render(self):
+
         """Verify all core HTML views render HTTP 200"""
         routes = ['/', '/catalog', '/library', '/wanted', '/downloads', '/settings', '/import']
         for r in routes:

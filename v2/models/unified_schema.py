@@ -126,8 +126,9 @@ class Game(db.Model):
     
     # Relationships
     rom_files = relationship('ROMFile', back_populates='game', cascade='all, delete-orphan')
-    platforms = relationship('Platform', secondary=game_platform_association, back_populates='games')
-    genres = relationship('Genre', secondary=game_genre_association, back_populates='games')
+    platforms = relationship('Platform', secondary=game_platform_association, back_populates='games', collection_class=set)
+    genres = relationship('Genre', secondary=game_genre_association, back_populates='games', collection_class=set)
+
     developers = relationship('Company', secondary=game_developer_association, 
                             primaryjoin="Game.id==game_developer_association.c.game_id",
                             secondaryjoin="Company.id==game_developer_association.c.company_id",
@@ -208,22 +209,32 @@ class Game(db.Model):
     # Compatibility properties for old Game model API
     @property
     def platform(self):
-        return self.platforms[0].name if self.platforms else "Unknown"
+        return list(self.platforms)[0].name if self.platforms else "Unknown"
 
     @platform.setter
     def platform(self, value):
         if not value or value == "Unknown":
             return
         from models.unified_schema import Platform
+        from extensions import db
+        
         plat_obj = Platform.query.filter(
             (Platform.name.ilike(value)) | (Platform.slug == value.lower())
         ).first()
+
         if not plat_obj:
             plat_slug = create_slug(value)
             plat_obj = Platform(name=value, slug=plat_slug)
             db.session.add(plat_obj)
-        if plat_obj not in self.platforms:
-            self.platforms.append(plat_obj)
+
+        if plat_obj:
+            self.platforms.add(plat_obj)
+
+
+
+
+
+
 
     @property
     def region(self):
@@ -433,7 +444,8 @@ class Platform(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    games = relationship('Game', secondary=game_platform_association, back_populates='platforms')
+    games = relationship('Game', secondary=game_platform_association, back_populates='platforms', collection_class=set)
+
     
     def to_dict(self):
         """Convert platform to dictionary"""
