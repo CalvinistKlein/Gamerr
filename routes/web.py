@@ -1,5 +1,5 @@
 """
-Web routes for Romarr UI
+Web routes for Gamerr UI
 """
 
 from flask import Blueprint, render_template, jsonify, request

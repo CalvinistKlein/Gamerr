@@ -1,5 +1,5 @@
 """
-API routes for Romarr
+API routes for Gamerr
 """
 
 from datetime import datetime, timezone
@@ -372,7 +372,7 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'service': 'romarr',
+        'service': 'gamerr',
         'version': '0.1.0',
         'timestamp': datetime.now(timezone.utc).isoformat()
     })

@@ -1,5 +1,5 @@
 """
-Configuration settings for ROMarr
+Configuration settings for Gamerr
 """
 
 import os
@@ -10,7 +10,11 @@ load_dotenv()
 class Config:
     """Base configuration"""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'instance', 'romarr.db')}"
+    _base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _db_path = os.path.join(_base_dir, 'instance', 'gamerr.db')
+    if not os.path.exists(_db_path) and os.path.exists(os.path.join(_base_dir, 'instance', 'romarr.db')):
+        _db_path = os.path.join(_base_dir, 'instance', 'romarr.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{_db_path}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Prowlarr configuration

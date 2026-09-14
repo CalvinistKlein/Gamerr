@@ -2,7 +2,7 @@
 set -e
 
 echo "========================================="
-echo "Romarr - ROM Database Management System"
+echo "Gamerr - Video Game Collection Manager"
 echo "========================================="
 echo "Version: 1.0.0 | Database Format: .rommar"
 echo "Sources: No-Intro, MAME, libretro-database"

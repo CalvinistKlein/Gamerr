@@ -1,5 +1,5 @@
 """
-Application constants for Romarr
+Application constants for Gamerr
 """
 
 # Game statuses

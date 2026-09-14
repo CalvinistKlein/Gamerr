@@ -1,5 +1,5 @@
 """
-Romarr: Automated ROM Management System
+Gamerr: Video Game Collection & Management System
 Main Flask application entry point
 """
 
