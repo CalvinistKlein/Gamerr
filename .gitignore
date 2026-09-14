@@ -11,6 +11,24 @@
 *.wbfs
 *.nsp
 *.xci
+*.sfc
+*.smc
+*.nes
+*.fds
+*.gba
+*.gbc
+*.gb
+*.z64
+*.n64
+*.v64
+*.gcm
+*.rvz
+*.pbp
+*.cso
+*.cdi
+*.gdi
+*.d64
+*.adf
 
 # Database files
 *.db
@@ -46,6 +64,7 @@ temp_extract/
 uploads/
 instance/
 Library/
+roms/
 No-Intro Love Pack (Standard) (2026-03-09)/
 Mame_XML_Full_Lists_0.285_Arcade/
 libretro-database/
