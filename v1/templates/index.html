@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Romarr{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}System overview and statistics{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="card stat-card">
+            <div class="stat-header">
+                <div class="stat-icon" style="background-color: rgba(62, 207, 110, 0.1);">
+                    <i class="fas fa-gamepad" style="color: var(--primary);"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-value" data-stat="library_count">{{ library_count }}</h3>
+                    <p class="stat-label">Games in Library</p>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <span class="stat-trend positive">
+                    <i class="fas fa-check-circle"></i> Library up to date
+                </span>
+            </div>
+        </div>
+        
+        <div class="card stat-card">
+            <div class="stat-header">
+                <div class="stat-icon" style="background-color: rgba(232, 135, 26, 0.1);">
+                    <i class="fas fa-search" style="color: var(--warning);"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-value" data-stat="wanted_count">{{ wanted_count }}</h3>
+                    <p class="stat-label">Games Wanted</p>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <span class="stat-trend">
+                    <i class="fas fa-clock"></i> Searching automatically
+                </span>
+            </div>
+        </div>
+        
+        <div class="card stat-card">
+            <div class="stat-header">
+                <div class="stat-icon" style="background-color: rgba(45, 140, 240, 0.1);">
+                    <i class="fas fa-download" style="color: var(--info);"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-value" data-stat="active_downloads_count">{{ active_downloads|length }}</h3>
+                    <p class="stat-label">Active Downloads</p>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <span class="stat-trend {% if active_downloads|length > 0 %}positive{% endif %}">
+                    <i class="fas fa-arrow-up"></i> {{ active_downloads|length }} downloading
+                </span>
+            </div>
+        </div>
+        
+        <div class="card stat-card">
+            <div class="stat-header">
+                <div class="stat-icon" style="background-color: rgba(255, 71, 87, 0.1);">
+                    <i class="fas fa-hdd" style="color: var(--error);"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-value" id="storage-value">-- GB</h3>
+                    <p class="stat-label">Storage Used</p>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <span class="stat-trend">
+                    <i class="fas fa-info-circle"></i> Monitoring
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-history"></i> Recent Activity
+                </h3>
+                <button id="activity-ellipsis-btn" class="btn btn-icon">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+            <div class="activity-list">
+                {% if recent_activity %}
+                    {% for activity in recent_activity %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            {% if activity.type == 'download' %}
+                                <i class="fas fa-download"></i>
+                            {% elif activity.type == 'add' %}
+                                <i class="fas fa-plus"></i>
+                            {% elif activity.type == 'search' %}
+                                <i class="fas fa-search"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">{{ activity.message }}</p>
+                            <span class="activity-time">{{ activity.time }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <p>No recent activity</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Wanted Games -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-search"></i> Recent Wanted Games
+                </h3>
+                <a href="{{ url_for('web.wanted') }}" class="btn btn-secondary btn-sm">
+                    View All
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Game</th>
+                            <th>Platform</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_wanted %}
+                            {% for game in recent_wanted %}
+                            <tr>
+                                <td>
+                                    <strong>{{ game.game_title }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge badge-secondary">{{ game.platform }}</span>
+                                </td>
+                                <td>
+                                    {% if game.priority == 1 %}
+                                        <span class="badge badge-success">Low</span>
+                                    {% elif game.priority == 2 %}
+                                        <span class="badge badge-warning">Medium</span>
+                                    {% elif game.priority == 3 %}
+                                        <span class="badge badge-error">High</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">{{ game.status|capitalize }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    <i class="fas fa-search"></i>
+                                    <p>No wanted games</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-server"></i> System Status
+                </h3>
+                <span class="badge badge-success">All Systems Operational</span>
+            </div>
+            <div class="status-list">
+                <div class="status-item">
+                    <div class="status-info">
+                        <div class="status-icon online">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div>
+                            <h4>Database</h4>
+                            <p>SQLite connection active</p>
+                        </div>
+                    </div>
+                    <span class="status-badge online">Online</span>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-info">
+                        <div class="status-icon {% if prowlarr_config.enabled %}online{% else %}offline{% endif %}">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div>
+                            <h4>Prowlarr</h4>
+                            <p>Game search integration</p>
+                        </div>
+                    </div>
+                    <span class="status-badge {% if prowlarr_config.enabled %}online{% else %}offline{% endif %}">
+                        {% if prowlarr_config.enabled %}Connected{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-info">
+                        <div class="status-icon {% if qbittorrent_config.enabled %}online{% else %}offline{% endif %}">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div>
+                            <h4>qBittorrent</h4>
+                            <p>Download client</p>
+                        </div>
+                    </div>
+                    <span class="status-badge {% if qbittorrent_config.enabled %}online{% else %}offline{% endif %}">
+                        {% if qbittorrent_config.enabled %}Connected{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-info">
+                        <div class="status-icon {% if network_config.network_share_enabled %}online{% else %}offline{% endif %}">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div>
+                            <h4>Network Sharing</h4>
+                            <p>RetroPie/RetroArch integration</p>
+                        </div>
+                    </div>
+                    <span class="status-badge {% if network_config.network_share_enabled %}online{% else %}offline{% endif %}">
+                        {% if network_config.network_share_enabled %}Enabled{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h3>
+            </div>
+            <div class="quick-actions">
+                <a href="{{ url_for('web.catalog') }}" class="quick-action">
+                    <div class="quick-action-icon" style="background-color: rgba(62, 207, 110, 0.1);">
+                        <i class="fas fa-search" style="color: var(--primary);"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h4>Browse Catalog</h4>
+                        <p>Search for new games</p>
+                    </div>
+                </a>
+                
+                <a href="{{ url_for('web.wanted') }}" class="quick-action">
+                    <div class="quick-action-icon" style="background-color: rgba(232, 135, 26, 0.1);">
+                        <i class="fas fa-plus" style="color: var(--warning);"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h4>Add Wanted Game</h4>
+                        <p>Request a new game</p>
+                    </div>
+                </a>
+                
+                <a href="{{ url_for('web.downloads') }}" class="quick-action">
+                    <div class="quick-action-icon" style="background-color: rgba(45, 140, 240, 0.1);">
+                        <i class="fas fa-download" style="color: var(--info);"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h4>Monitor Downloads</h4>
+                        <p>View download progress</p>
+                    </div>
+                </a>
+                
+                <a href="{{ url_for('web.settings') }}" class="quick-action">
+                    <div class="quick-action-icon" style="background-color: rgba(108, 99, 255, 0.1);">
+                        <i class="fas fa-cog" style="color: #6c63ff;"></i>
+                    </div>
+                    <div class="quick-action-content">
+                        <h4>Settings</h4>
+                        <p>Configure Romarr</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.stat-card {
+    padding: var(--spacing-md);
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.stat-footer {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border-light);
+}
+
+.stat-trend {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.stat-trend.positive {
+    color: var(--success);
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.activity-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background-color: var(--primary-transparent);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.activity-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.status-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.status-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.status-icon.online {
+    background-color: rgba(62, 207, 110, 0.1);
+    color: var(--success);
+}
+
+.status-icon.offline {
+    background-color: rgba(255, 71, 87, 0.1);
+    color: var(--error);
+}
+
+.status-info h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.status-info p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.status-badge.online {
+    background-color: rgba(62, 207, 110, 0.2);
+    color: var(--success);
+}
+
+.status-badge.offline {
+    background-color: rgba(255, 71, 87, 0.2);
+    color: var(--error);
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.quick-action:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.quick-action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.quick-action-content h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.quick-action-content p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.75rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-md);
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-disabled);
+}
+
+.empty-state p {
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

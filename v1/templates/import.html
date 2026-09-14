@@ -1,0 +1,810 @@
+{% extends "base.html" %}
+
+{% block title %}Import ROMs - Romerr{% endblock %}
+
+{% block page_title %}Import ROMs{% endblock %}
+{% block breadcrumb %}Import ROM files from your file system{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">
+                    <i class="fas fa-file-import" style="color: var(--primary);"></i> ROM Import
+                </h3>
+                <p class="card-subtitle">Scan and import ROM files from your file system</p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Directory Selection -->
+            <div class="form-group">
+                <label class="form-label" for="directoryPath">
+                    <i class="fas fa-folder-open"></i> Directory Path
+                </label>
+                <div class="input-group">
+                    <input type="text" 
+                           id="directoryPath" 
+                           class="form-control" 
+                           placeholder="{{ default_path }}"
+                           value="{{ default_path }}">
+                    <button class="btn btn-secondary" type="button" id="browseBtn">
+                        <i class="fas fa-folder"></i> Browse
+                    </button>
+                </div>
+                <p class="form-text">Select directory containing ROM files to import</p>
+            </div>
+
+            <!-- File Browser Modal (hidden) -->
+            <div id="fileBrowserModal" class="modal-overlay" style="display: none;">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-folder-open"></i> Select Directory
+                        </h3>
+                        <button class="modal-close" id="closeFileBrowser">&times;</button>
+                    </div>
+                    <div class="modal-content">
+                        <div class="file-browser">
+                            <div class="file-browser-header">
+                                <div class="current-path" id="currentPath">/data/roms</div>
+                                <button class="btn btn-sm btn-secondary" id="goUpBtn">
+                                    <i class="fas fa-level-up-alt"></i> Up
+                                </button>
+                            </div>
+                            <div class="file-browser-content">
+                                <div class="directory-list" id="directoryList">
+                                    <!-- Directories will be populated here -->
+                                    <div class="loading-directories">
+                                        <div class="spinner"></div>
+                                        <p>Loading directories...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="file-browser-footer">
+                                <div class="selected-path">
+                                    <strong>Selected:</strong> <span id="selectedPath">/data/roms</span>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="modal-button cancel" id="cancelFileBrowser">Cancel</button>
+                                    <button class="modal-button confirm" id="confirmFileBrowser">Select Directory</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scan Button -->
+            <div class="form-actions">
+                <button class="btn btn-primary" id="scanBtn">
+                    <i class="fas fa-search"></i> Scan Directory
+                </button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                <div class="spinner"></div>
+                <p>Scanning directory for ROM files...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" style="display: none;">
+                <div class="results-header">
+                    <h4><i class="fas fa-list"></i> Detected ROMs (<span id="romCount">0</span>)</h4>
+                    <div class="results-actions">
+                        <button class="btn btn-secondary" id="selectAllBtn">
+                            <i class="fas fa-check-square"></i> Select All
+                        </button>
+                        <button class="btn btn-primary" id="importSelectedBtn">
+                            <i class="fas fa-file-import"></i> Import Selected
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table" id="romsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="selectAllCheckbox">
+                                </th>
+                                <th>File</th>
+                                <th>Detected Title</th>
+                                <th>Platform</th>
+                                <th>Region</th>
+                                <th>Size</th>
+                                <th>Confidence</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="romsTableBody">
+                            <!-- ROMs will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="no-results" id="noResults" style="display: none;">
+                    <div class="empty-state">
+                        <i class="fas fa-search" style="font-size: 48px; color: var(--text-muted);"></i>
+                        <h4>No ROMs Found</h4>
+                        <p>No ROM files were detected in the selected directory.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Progress -->
+            <div id="importProgress" class="import-progress" style="display: none;">
+                <h4><i class="fas fa-sync-alt fa-spin"></i> Importing ROMs...</h4>
+                <div class="progress">
+                    <div class="progress-bar" id="importProgressBar" style="width: 0%"></div>
+                </div>
+                <p id="importStatus">Preparing import...</p>
+            </div>
+
+            <!-- Import Results -->
+            <div id="importResults" class="import-results" style="display: none;">
+                <h4><i class="fas fa-check-circle" style="color: var(--primary);"></i> Import Complete</h4>
+                <div class="results-summary">
+                    <div class="result-item success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Imported: <strong id="importedCount">0</strong> ROMs</span>
+                    </div>
+                    <div class="result-item skipped">
+                        <i class="fas fa-minus-circle"></i>
+                        <span>Skipped (already in library): <strong id="skippedCount">0</strong></span>
+                    </div>
+                    <div class="result-item error" id="errorsContainer" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Errors: <strong id="errorCount">0</strong></span>
+                        <div class="error-list" id="errorList"></div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a href="{{ url_for('web.library') }}" class="btn btn-primary">
+                        <i class="fas fa-gamepad"></i> View Library
+                    </a>
+                    <button class="btn btn-secondary" id="scanAgainBtn">
+                        <i class="fas fa-redo"></i> Scan Another Directory
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Detection Info -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle" style="color: var(--accent);"></i> Platform Detection
+                </h3>
+                <p class="card-subtitle">How Romerr detects platforms from filenames</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="detection-info">
+                <p>Romerr automatically detects platform information from ROM filenames using:</p>
+                <ul>
+                    <li><strong>File extensions</strong> (.nes, .smc, .gba, .iso, etc.)</li>
+                    <li><strong>Filename patterns</strong> (platform names in parentheses or brackets)</li>
+                    <li><strong>Region detection</strong> from country codes in filenames</li>
+                    <li><strong>Title extraction</strong> by removing common tags and patterns</li>
+                </ul>
+                <p class="form-text">You can manually adjust detected information before importing.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.import-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 40px;
+    background: var(--background-card);
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.loading-indicator .spinner {
+    border: 4px solid var(--text-muted);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.results-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.table th {
+    background: var(--background-card);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.rom-row {
+    transition: background-color 0.2s;
+}
+
+.rom-row:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.confidence-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.confidence-high {
+    background-color: rgba(62, 207, 110, 0.2);
+    color: #3ecf6e;
+}
+
+.confidence-medium {
+    background-color: rgba(232, 135, 26, 0.2);
+    color: #e8871a;
+}
+
+.confidence-low {
+    background-color: rgba(136, 136, 136, 0.2);
+    color: #888888;
+}
+
+.import-progress {
+    background: var(--background-card);
+    border-radius: 8px;
+    padding: 30px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.progress {
+    height: 10px;
+    background: var(--background-dark);
+    border-radius: 5px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.import-results {
+    background: var(--background-card);
+    border-radius: 8px;
+    padding: 30px;
+    margin: 20px 0;
+}
+
+.results-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.result-item.success {
+    border-left: 4px solid #3ecf6e;
+}
+
+.result-item.skipped {
+    border-left: 4px solid #e8871a;
+}
+
+.result-item.error {
+    border-left: 4px solid #ff4757;
+}
+
+.error-list {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255, 71, 87, 0.1);
+    border-radius: 4px;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.error-list div {
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error-list div:last-child {
+    border-bottom: none;
+}
+
+.detection-info ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.detection-info li {
+    margin: 5px 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    margin-bottom: 20px;
+}
+
+.form-control[readonly] {
+    background: var(--background-dark);
+    cursor: not-allowed;
+}
+
+.input-group {
+    display: flex;
+}
+
+.input-group .form-control {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const directoryPath = document.getElementById('directoryPath');
+    const browseBtn = document.getElementById('browseBtn');
+    const scanBtn = document.getElementById('scanBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsSection = document.getElementById('resultsSection');
+    const romsTableBody = document.getElementById('romsTableBody');
+    const noResults = document.getElementById('noResults');
+    const romCount = document.getElementById('romCount');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const importSelectedBtn = document.getElementById('importSelectedBtn');
+    const importProgress = document.getElementById('importProgress');
+    const importProgressBar = document.getElementById('importProgressBar');
+    const importStatus = document.getElementById('importStatus');
+    const importResults = document.getElementById('importResults');
+    const importedCount = document.getElementById('importedCount');
+    const skippedCount = document.getElementById('skippedCount');
+    const errorsContainer = document.getElementById('errorsContainer');
+    const errorCount = document.getElementById('errorCount');
+    const errorList = document.getElementById('errorList');
+    const scanAgainBtn = document.getElementById('scanAgainBtn');
+
+    let currentRoms = [];
+    let selectedRoms = new Set();
+    let currentDirectory = '/data/roms';
+
+    // File Browser Functions
+    async function loadDirectories(path) {
+        const directoryList = document.getElementById('directoryList');
+        directoryList.innerHTML = '<div class="loading-directories"><div class="spinner"></div><p>Loading directories...</p></div>';
+        
+        try {
+            // In a real implementation, this would call an API endpoint
+            // For now, simulate with common ROM directories
+            const directories = [
+                { name: 'nes', path: path + '/nes', type: 'directory' },
+                { name: 'snes', path: path + '/snes', type: 'directory' },
+                { name: 'gba', path: path + '/gba', type: 'directory' },
+                { name: 'psx', path: path + '/psx', type: 'directory' },
+                { name: 'n64', path: path + '/n64', type: 'directory' },
+                { name: 'genesis', path: path + '/genesis', type: 'directory' },
+                { name: 'arcade', path: path + '/arcade', type: 'directory' }
+            ];
+            
+            // Also add parent directory if not at root
+            const pathParts = path.split('/').filter(p => p);
+            if (pathParts.length > 0) {
+                const parentPath = '/' + pathParts.slice(0, -1).join('/');
+                directories.unshift({
+                    name: '.. (Parent)',
+                    path: parentPath || '/',
+                    type: 'directory',
+                    isParent: true
+                });
+            }
+            
+            // Render directories
+            directoryList.innerHTML = '';
+            directories.forEach(dir => {
+                const dirElement = document.createElement('div');
+                dirElement.className = 'directory-item';
+                dirElement.innerHTML = `
+                    <i class="fas fa-folder${dir.isParent ? '-open' : ''}"></i>
+                    <span class="directory-name">${dir.name}</span>
+                    <span class="directory-path">${dir.path}</span>
+                `;
+                dirElement.dataset.path = dir.path;
+                dirElement.addEventListener('click', () => {
+                    // Update selected path
+                    document.getElementById('selectedPath').textContent = dir.path;
+                    // Highlight selected
+                    document.querySelectorAll('.directory-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    dirElement.classList.add('selected');
+                });
+                directoryList.appendChild(dirElement);
+            });
+            
+            // Update current path display
+            document.getElementById('currentPath').textContent = path;
+            document.getElementById('selectedPath').textContent = path;
+            currentDirectory = path;
+            
+        } catch (error) {
+            directoryList.innerHTML = `<div class="error-message">Error loading directories: ${error.message}</div>`;
+        }
+    }
+
+    // Browse button - open file browser modal
+    browseBtn.addEventListener('click', function() {
+        const modal = document.getElementById('fileBrowserModal');
+        modal.style.display = 'flex';
+        loadDirectories(currentDirectory);
+    });
+
+    // File browser modal controls
+    document.getElementById('closeFileBrowser').addEventListener('click', function() {
+        document.getElementById('fileBrowserModal').style.display = 'none';
+    });
+    
+    document.getElementById('cancelFileBrowser').addEventListener('click', function() {
+        document.getElementById('fileBrowserModal').style.display = 'none';
+    });
+    
+    document.getElementById('goUpBtn').addEventListener('click', function() {
+        const pathParts = currentDirectory.split('/').filter(p => p);
+        if (pathParts.length > 0) {
+            const parentPath = '/' + pathParts.slice(0, -1).join('/');
+            loadDirectories(parentPath || '/');
+        }
+    });
+    
+    document.getElementById('confirmFileBrowser').addEventListener('click', function() {
+        const selectedPath = document.getElementById('selectedPath').textContent;
+        document.getElementById('directoryPath').value = selectedPath;
+        document.getElementById('fileBrowserModal').style.display = 'none';
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('fileBrowserModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+
+    // Scan directory
+    scanBtn.addEventListener('click', async function() {
+        const path = directoryPath.value.trim() || '{{ default_path }}';
+        
+        // Show loading indicator
+        loadingIndicator.style.display = 'block';
+        resultsSection.style.display = 'none';
+        noResults.style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/import/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ path: path })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                currentRoms = data.roms;
+                updateRomsTable();
+                
+                if (currentRoms.length > 0) {
+                    resultsSection.style.display = 'block';
+                    noResults.style.display = 'none';
+                    romCount.textContent = currentRoms.length;
+                } else {
+                    resultsSection.style.display = 'none';
+                    noResults.style.display = 'block';
+                }
+            } else {
+                alert('Error scanning directory: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error scanning directory: ' + error.message);
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+
+    // Update ROMs table
+    function updateRomsTable() {
+        romsTableBody.innerHTML = '';
+        selectedRoms.clear();
+        
+        currentRoms.forEach((rom, index) => {
+            const row = document.createElement('tr');
+            row.className = 'rom-row';
+            row.dataset.index = index;
+            
+            // Format file size
+            const fileSize = rom.file_size ? formatFileSize(rom.file_size) : 'Unknown';
+            
+            // Confidence badge
+            const confidenceClass = `confidence-${rom.confidence || 'low'}`;
+            const confidenceText = (rom.confidence || 'low').charAt(0).toUpperCase() + (rom.confidence || 'low').slice(1);
+            
+            row.innerHTML = `
+                <td>
+                    <input type="checkbox" class="rom-checkbox" data-index="${index}">
+                </td>
+                <td>
+                    <div class="filename" title="${rom.filename}">
+                        <i class="fas fa-file"></i> ${rom.filename}
+                    </div>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm title-input" 
+                           value="${rom.detected_title || ''}" 
+                           data-field="title" 
+                           data-index="${index}"
+                           placeholder="Game title">
+                </td>
+                <td>
+                    <select class="form-control form-control-sm platform-select" 
+                            data-field="platform" 
+                            data-index="${index}">
+                        <option value="">Select platform</option>
+                        {% for platform in platforms %}
+                        <option value="{{ platform }}" ${rom.detected_platform === '{{ platform }}' ? 'selected' : ''}>
+                            {{ platform }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm region-input" 
+                           value="${rom.detected_region || ''}" 
+                           data-field="region" 
+                           data-index="${index}"
+                           placeholder="Region">
+                </td>
+                <td>${fileSize}</td>
+                <td>
+                    <span class="confidence-badge ${confidenceClass}">${confidenceText}</span>
+                </td>
+                <td>
+                    <button class="btn btn-icon btn-sm view-file-btn" title="View file info" data-index="${index}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            
+            romsTableBody.appendChild(row);
+        });
+        
+        // Add event listeners to checkboxes
+        document.querySelectorAll('.rom-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const index = parseInt(this.dataset.index);
+                if (this.checked) {
+                    selectedRoms.add(index);
+                } else {
+                    selectedRoms.delete(index);
+                }
+                updateSelectAllState();
+            });
+        });
+        
+        // Add event listeners to form controls
+        document.querySelectorAll('.title-input, .region-input').forEach(input => {
+            input.addEventListener('change', function() {
+                const index = parseInt(this.dataset.index);
+                const field = this.dataset.field;
+                currentRoms[index][field] = this.value;
+            });
+        });
+        
+        document.querySelectorAll('.platform-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const index = parseInt(this.dataset.index);
+                currentRoms[index].platform = this.value;
+            });
+        });
+        
+        // Add event listeners to view buttons
+        document.querySelectorAll('.view-file-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                const rom = currentRoms[index];
+                alert(`File Info:\n\nFilename: ${rom.filename}\nPath: ${rom.file_path}\nSize: ${formatFileSize(rom.file_size)}\nDetected Title: ${rom.detected_title}\nPlatform: ${rom.detected_platform || 'Unknown'}\nRegion: ${rom.detected_region || 'Unknown'}`);
+            });
+        });
+        
+        updateSelectAllState();
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0 || !bytes) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Update select all checkbox state
+    function updateSelectAllState() {
+        const allChecked = currentRoms.length > 0 && selectedRoms.size === currentRoms.length;
+        const someChecked = selectedRoms.size > 0 && selectedRoms.size < currentRoms.length;
+        
+        selectAllCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = someChecked;
+    }
+
+    // Select all checkbox
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.rom-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+            const index = parseInt(checkbox.dataset.index);
+            if (this.checked) {
+                selectedRoms.add(index);
+            } else {
+                selectedRoms.delete(index);
+            }
+        });
+    });
+
+    // Select all button
+    selectAllBtn.addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.rom-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+            const index = parseInt(checkbox.dataset.index);
+            selectedRoms.add(index);
+        });
+        updateSelectAllState();
+    });
+
+    // Import selected ROMs
+    importSelectedBtn.addEventListener('click', async function() {
+        if (selectedRoms.size === 0) {
+            alert('Please select at least one ROM to import.');
+            return;
+        }
+
+        // Prepare ROMs for import
+        const romsToImport = Array.from(selectedRoms).map(index => {
+            const rom = currentRoms[index];
+            return {
+                filename: rom.filename,
+                file_path: rom.file_path,
+                file_size: rom.file_size,
+                title: rom.detected_title || rom.title || rom.filename,
+                platform: rom.detected_platform || rom.platform || '',
+                region: rom.detected_region || rom.region || '',
+                release_year: rom.detected_release_year || rom.release_year
+            };
+        });
+
+        // Show import progress
+        resultsSection.style.display = 'none';
+        importProgress.style.display = 'block';
+        importProgressBar.style.width = '0%';
+        importStatus.textContent = 'Starting import...';
+
+        try {
+            const response = await fetch('/api/import/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ roms: romsToImport })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update progress bar
+                importProgressBar.style.width = '100%';
+                importStatus.textContent = 'Import complete!';
+                
+                // Show results
+                setTimeout(() => {
+                    importProgress.style.display = 'none';
+                    importResults.style.display = 'block';
+                    
+                    importedCount.textContent = data.imported;
+                    skippedCount.textContent = data.skipped;
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        errorsContainer.style.display = 'block';
+                        errorCount.textContent = data.errors.length;
+                        errorList.innerHTML = '';
+                        data.errors.forEach(error => {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.textContent = error;
+                            errorList.appendChild(errorDiv);
+                        });
+                    }
+                }, 500);
+            } else {
+                alert('Error importing ROMs: ' + (data.error || 'Unknown error'));
+                importProgress.style.display = 'none';
+                resultsSection.style.display = 'block';
+            }
+        } catch (error) {
+            alert('Error importing ROMs: ' + error.message);
+            importProgress.style.display = 'none';
+            resultsSection.style.display = 'block';
+        }
+    });
+
+    // Scan again button
+    scanAgainBtn.addEventListener('click', function() {
+        importResults.style.display = 'none';
+        resultsSection.style.display = 'none';
+        directoryPath.focus();
+    });
+
+    // Initialize with default path
+    if (directoryPath.value) {
+        setTimeout(() => {
+            scanBtn.click();
+        }, 500);
+    }
+});</script>
+{% endblock %}

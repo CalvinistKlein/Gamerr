@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}{{ game.title }} - Romarr{% endblock %}
+
+{% block content %}
+<div class="game-details-page">
+    <!-- Back Navigation -->
+    <div style="margin-bottom: 16px;">
+        <a href="{{ url_for('web.catalog') }}" class="arr-btn arr-btn-secondary" style="font-size: 0.82rem;">
+            <i class="fas fa-arrow-left"></i> Back to Catalog
+        </a>
+    </div>
+
+    <!-- Sonarr/Radarr Style Hero Header -->
+    <div class="arr-hero-header">
+        <!-- Blurred Fanart Backdrop -->
+        <div class="arr-hero-backdrop" style="background-image: url('{{ game.cover_image_url or '' }}');"></div>
+
+        <div class="arr-hero-content">
+            <!-- Large Cover Poster -->
+            <div style="position: relative;">
+                {% if game.cover_image_url %}
+                <img src="{{ game.cover_image_url }}" alt="{{ game.title }}" class="arr-hero-poster">
+                {% else %}
+                <div class="arr-hero-poster" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #161b22; color: #475569;">
+                    <i class="fas fa-gamepad fa-3x"></i>
+                    <span style="font-size: 0.85rem; margin-top: 10px;">{{ game.platform }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Hero Info & Metadata -->
+            <div class="arr-hero-info">
+                <div class="arr-hero-meta-row">
+                    <span class="arr-pill arr-pill-cyan" style="font-size: 0.8rem; padding: 4px 10px;">
+                        <i class="fas fa-gamepad"></i> {{ game.platform }}
+                    </span>
+                    {% if game.release_year %}
+                    <span class="arr-pill" style="font-size: 0.8rem; padding: 4px 10px;">
+                        <i class="fas fa-calendar"></i> {{ game.release_year }}
+                    </span>
+                    {% endif %}
+                    {% if game.rating %}
+                    <span class="arr-pill" style="font-size: 0.8rem; padding: 4px 10px; color: #fbbf24;">
+                        <i class="fas fa-star"></i> {{ "%.1f"|format(game.rating) }}/5.0
+                    </span>
+                    {% endif %}
+                </div>
+
+                <h1 class="arr-hero-title">{{ game.title }}</h1>
+
+                <p style="color: var(--arr-text-muted); font-size: 0.95rem; line-height: 1.6; margin: 6px 0 16px 0; max-width: 800px;">
+                    {{ game.description or 'No synopsis available for this title.' }}
+                </p>
+
+                <!-- Action Bar (Sonarr/Radarr Style) -->
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: auto;">
+                    <button class="arr-btn arr-btn-cyan" id="monitorBtn">
+                        <i class="fas fa-bookmark"></i> Add to Wanted & Monitor
+                    </button>
+                    <button class="arr-btn arr-btn-secondary" id="searchNowBtn">
+                        <i class="fas fa-search"></i> Interactive Search
+                    </button>
+                    {% if game.source %}
+                    <span class="arr-btn arr-btn-secondary" style="cursor: default; opacity: 0.8;">
+                        <i class="fas fa-database"></i> Source: {{ game.source|upper }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <!-- Card 1: Game Details -->
+        <div style="background: var(--arr-bg-surface); border: 1px solid var(--arr-border); border-radius: 8px; padding: 20px;">
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-info-circle" style="color: var(--arr-cyan);"></i> Information
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.875rem;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--arr-border); padding-bottom: 8px;">
+                    <span style="color: var(--arr-text-muted);">Developer</span>
+                    <strong style="color: #fff;">{{ game.developer or 'Unknown' }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--arr-border); padding-bottom: 8px;">
+                    <span style="color: var(--arr-text-muted);">Publisher</span>
+                    <strong style="color: #fff;">{{ game.publisher or 'Unknown' }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--arr-border); padding-bottom: 8px;">
+                    <span style="color: var(--arr-text-muted);">Genre</span>
+                    <strong style="color: #fff;">{{ game.genre or 'N/A' }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--arr-border); padding-bottom: 8px;">
+                    <span style="color: var(--arr-text-muted);">Region</span>
+                    <strong style="color: #fff;">{{ game.region or 'World / All' }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 4px;">
+                    <span style="color: var(--arr-text-muted);">Players</span>
+                    <strong style="color: #fff;">{{ game.players or 1 }} Player{% if (game.players or 1) > 1 %}s{% endif %}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Release & Indexing -->
+        <div style="background: var(--arr-bg-surface); border: 1px solid var(--arr-border); border-radius: 8px; padding: 20px;">
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-compact-disc" style="color: var(--arr-indigo);"></i> Media & Tracking
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.875rem;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--arr-border); padding-bottom: 8px;">
+                    <span style="color: var(--arr-text-muted);">Download Popularity</span>
+                    <strong style="color: var(--arr-cyan);">{{ game.popularity_score or 0.0 }} / 100</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--arr-border); padding-bottom: 8px;">
+                    <span style="color: var(--arr-text-muted);">Downloads Recorded</span>
+                    <strong style="color: #fff;">{{ game.download_count or 0 }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--arr-border); padding-bottom: 8px;">
+                    <span style="color: var(--arr-text-muted);">Catalog ID</span>
+                    <span style="font-family: monospace; color: var(--arr-text-muted);">#{{ game.id }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 4px;">
+                    <span style="color: var(--arr-text-muted);">Last Metadata Update</span>
+                    <span style="color: var(--arr-text-muted);">{{ game.last_updated.strftime('%Y-%m-%d') if game.last_updated else 'Recently' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('monitorBtn').addEventListener('click', function() {
+        fetch('/api/wanted', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                game_title: {{ game.title|tojson }},
+                platform: {{ game.platform|tojson }},
+                region_preference: {{ (game.region or "USA")|tojson }},
+                priority: 2
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('Added ' + {{ game.title|tojson }} + ' to Wanted list! Automation will search indexers automatically.');
+        })
+        .catch(err => {
+            alert('Failed to add to wanted list.');
+        });
+    });
+
+    document.getElementById('searchNowBtn').addEventListener('click', function() {
+        alert('Triggering interactive indexer search for ' + {{ game.title|tojson }} + ' on ' + {{ game.platform|tojson }} + '...');
+        fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: {{ game.title|tojson }},
+                platform: {{ game.platform|tojson }}
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert('Search completed! Found ' + (data.results ? data.results.length : 0) + ' releases.');
+            window.location.href = '{{ url_for("web.wanted") }}';
+        })
+        .catch(err => {
+            alert('Search request dispatched.');
+        });
+    });
+</script>
+{% endblock %}

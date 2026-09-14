@@ -1,0 +1,1071 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Romerr{% endblock %}
+
+{% block page_title %}Settings{% endblock %}
+{% block breadcrumb %}Configure Romerr and external services{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <!-- Settings Navigation Tabs -->
+    <div class="tabs">
+        <button class="tab active" data-tab="prowlarr">
+            <i class="fas fa-search"></i> Prowlarr
+        </button>
+        <button class="tab" data-tab="qbittorrent">
+            <i class="fas fa-download"></i> qBittorrent
+        </button>
+        <button class="tab" data-tab="network">
+            <i class="fas fa-network-wired"></i> Network Hosting
+        </button>
+        <button class="tab" data-tab="downloads">
+            <i class="fas fa-cloud-download-alt"></i> Downloads
+        </button>
+        <button class="tab" data-tab="general">
+            <i class="fas fa-sliders-h"></i> General
+        </button>
+        <button class="tab" data-tab="metadata">
+            <i class="fas fa-tags"></i> Metadata
+        </button>
+        <button class="tab" data-tab="database">
+            <i class="fas fa-database"></i> Database
+        </button>
+    </div>
+
+    <!-- Prowlarr Settings -->
+    <div class="tab-content active" id="prowlarr-tab">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-search" style="color: var(--primary);"></i> Prowlarr Configuration
+                    </h3>
+                    <p class="card-subtitle">Configure Prowlarr integration for game searching</p>
+                </div>
+                <div class="status-badge">
+                    <span class="badge {% if prowlarr_config.enabled %}badge-success{% else %}badge-error{% endif %}">
+                        {% if prowlarr_config.enabled %}Connected{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <form class="settings-form" id="prowlarrForm">
+                <div class="form-group">
+                    <label class="form-label" for="prowlarr_url">
+                        <i class="fas fa-link"></i> Prowlarr URL
+                    </label>
+                    <input type="url" 
+                           id="prowlarr_url" 
+                           name="prowlarr_url" 
+                           value="{{ prowlarr_config.url }}"
+                           placeholder="http://localhost:9696"
+                           class="form-control">
+                    <p class="form-text">URL of your Prowlarr instance (usually http://localhost:9696)</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="prowlarr_api_key">
+                        <i class="fas fa-key"></i> API Key
+                    </label>
+                    <input type="password" 
+                           id="prowlarr_api_key" 
+                           name="prowlarr_api_key" 
+                           value="{{ prowlarr_config.api_key }}"
+                           placeholder="Your Prowlarr API key"
+                           class="form-control">
+                    <p class="form-text">Find this in Prowlarr Settings → General</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Integration Status</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   id="prowlarr_enabled" 
+                                   name="prowlarr_enabled" 
+                                   {% if prowlarr_config.enabled %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Enable Prowlarr Integration</span>
+                    </div>
+                    <p class="form-text">Disable if you don't use Prowlarr for game searching</p>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary test-connection-btn" data-service="prowlarr">
+                        <i class="fas fa-plug"></i> Test Connection
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- qBittorrent Settings -->
+    <div class="tab-content" id="qbittorrent-tab">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-download" style="color: var(--primary);"></i> qBittorrent Configuration
+                    </h3>
+                    <p class="card-subtitle">Configure qBittorrent for downloading games</p>
+                </div>
+                <div class="status-badge">
+                    <span class="badge {% if qbittorrent_config.enabled %}badge-success{% else %}badge-error{% endif %}">
+                        {% if qbittorrent_config.enabled %}Connected{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <form class="settings-form" id="qbittorrentForm">
+                <div class="form-group">
+                    <label class="form-label" for="qbittorrent_url">
+                        <i class="fas fa-link"></i> qBittorrent URL
+                    </label>
+                    <input type="url" 
+                           id="qbittorrent_url" 
+                           name="qbittorrent_url" 
+                           value="{{ qbittorrent_config.url }}"
+                           placeholder="http://localhost:8080"
+                           class="form-control">
+                    <p class="form-text">URL of your qBittorrent Web UI (usually http://localhost:8080)</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="qbittorrent_username">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input type="text" 
+                           id="qbittorrent_username" 
+                           name="qbittorrent_username" 
+                           value="{{ qbittorrent_config.username }}"
+                           placeholder="admin"
+                           class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="qbittorrent_password">
+                        <i class="fas fa-key"></i> Password
+                    </label>
+                    <input type="password" 
+                           id="qbittorrent_password" 
+                           name="qbittorrent_password" 
+                           value="{{ qbittorrent_config.password }}"
+                           placeholder="adminadmin"
+                           class="form-control">
+                    <p class="form-text">Default credentials are admin/adminadmin</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Integration Status</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   id="qbittorrent_enabled" 
+                                   name="qbittorrent_enabled" 
+                                   {% if qbittorrent_config.enabled %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Enable qBittorrent Integration</span>
+                    </div>
+                    <p class="form-text">Disable if you don't use qBittorrent for downloads</p>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary test-connection-btn" data-service="qbittorrent">
+                        <i class="fas fa-plug"></i> Test Connection
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Network Hosting Settings -->
+    <div class="tab-content" id="network-tab">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-network-wired" style="color: var(--primary);"></i> Network Hosting Configuration
+                    </h3>
+                    <p class="card-subtitle">Configure network sharing for RetroPie/RetroArch</p>
+                </div>
+                <div class="status-badge">
+                    <span class="badge {% if network_config.network_share_enabled %}badge-success{% else %}badge-error{% endif %}">
+                        {% if network_config.network_share_enabled %}Enabled{% else %}Disabled{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <form class="settings-form" id="networkForm">
+                <div class="form-group">
+                    <label class="form-label" for="roms_path">
+                        <i class="fas fa-folder"></i> ROMs Directory Path
+                    </label>
+                    <input type="text" 
+                           id="roms_path" 
+                           name="roms_path" 
+                           value="{{ network_config.roms_path }}"
+                           placeholder="/data/roms"
+                           class="form-control">
+                    <p class="form-text">Local path where ROMs are stored</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="network_share_path">
+                        <i class="fas fa-share-alt"></i> Network Share Path
+                    </label>
+                    <input type="text" 
+                           id="network_share_path" 
+                           name="network_share_path" 
+                           value="{{ network_config.network_share_path }}"
+                           placeholder="/data/roms"
+                           class="form-control">
+                    <p class="form-text">Path to share over network (usually same as ROMs directory)</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="network_share_type">
+                        <i class="fas fa-share-nodes"></i> Share Protocol
+                    </label>
+                    <select id="network_share_type" name="network_share_type" class="form-control">
+                        <option value="nfs" {% if network_config.network_share_type == 'nfs' %}selected{% endif %}>NFS (Network File System)</option>
+                        <option value="smb" {% if network_config.network_share_type == 'smb' %}selected{% endif %}>SMB/CIFS (Windows Sharing)</option>
+                        <option value="webdav" {% if network_config.network_share_type == 'webdav' %}selected{% endif %}>WebDAV (HTTP File Sharing)</option>
+                    </select>
+                    <p class="form-text">Protocol for sharing ROMs over network</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Network Share Status</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   id="network_share_enabled" 
+                                   name="network_share_enabled" 
+                                   {% if network_config.network_share_enabled %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Enable Network Sharing</span>
+                    </div>
+                    <p class="form-text">Enable to share ROMs over your local network</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">RetroPie Integration</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   id="retropie_integration" 
+                                   name="retropie_integration" 
+                                   {% if network_config.retropie_integration %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Enable RetroPie Integration</span>
+                    </div>
+                    <p class="form-text">Optimize for RetroPie systems</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">RetroArch Integration</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   id="retroarch_integration" 
+                                   name="retroarch_integration" 
+                                   {% if network_config.retroarch_integration %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Enable RetroArch Integration</span>
+                    </div>
+                    <p class="form-text">Optimize for RetroArch emulators</p>
+                </div>
+                
+                <!-- Network Share URL Display -->
+                <div class="form-group">
+                    <label class="form-label">Network Share URL</label>
+                    <div class="share-url-display">
+                        <code id="shareUrl" class="share-url">
+                            {% if network_config.network_share_type == 'nfs' %}
+                                nfs://{{ hostname }}:2049{{ network_config.network_share_path }}
+                            {% elif network_config.network_share_type == 'smb' %}
+                                smb://{{ hostname }}/roms
+                            {% elif network_config.network_share_type == 'webdav' %}
+                                http://{{ hostname }}:5000/webdav{{ network_config.network_share_path }}
+                            {% endif %}
+                        </code>
+                        <button type="button" class="btn btn-icon copy-url-btn" title="Copy URL">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="form-text">Use this URL to access ROMs from RetroPie/RetroArch</p>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Downloads Settings -->
+    <div class="tab-content" id="downloads-tab">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-cloud-download-alt" style="color: var(--primary);"></i> Download Configuration
+                    </h3>
+                    <p class="card-subtitle">Configure download behavior and preferences</p>
+                </div>
+            </div>
+
+            <form class="settings-form" id="downloadsForm">
+                <div class="form-group">
+                    <label class="form-label" for="download_default_category">
+                        <i class="fas fa-tag"></i> Default Category
+                    </label>
+                    <input type="text" 
+                           id="download_default_category" 
+                           name="download_default_category" 
+                           value="{{ download_config.default_category }}"
+                           placeholder="romerr-roms"
+                           class="form-control">
+                    <p class="form-text">Category label for downloads in qBittorrent</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="download_default_save_path">
+                        <i class="fas fa-folder-open"></i> Default Save Path
+                    </label>
+                    <input type="text" 
+                           id="download_default_save_path" 
+                           name="download_default_save_path" 
+                           value="{{ download_config.default_save_path }}"
+                           placeholder="/data/roms"
+                           class="form-control">
+                    <p class="form-text">Where to save downloaded ROMs</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Auto-Import</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   id="download_auto_import" 
+                                   name="download_auto_import" 
+                                   {% if download_config.auto_import %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Auto-import completed downloads</span>
+                    </div>
+                    <p class="form-text">Automatically add completed downloads to library</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Auto-Delete Torrents</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" 
+                                   id="download_auto_delete_torrents" 
+                                   name="download_auto_delete_torrents" 
+                                   {% if download_config.auto_delete_torrents %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Delete torrents after completion</span>
+                    </div>
+                    <p class="form-text">Remove torrents from qBittorrent after successful download</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="download_max_downloads">
+                        <i class="fas fa-tasks"></i> Maximum Concurrent Downloads
+                    </label>
+                    <input type="number" 
+                           id="download_max_downloads" 
+                           name="download_max_downloads" 
+                           value="{{ download_config.max_downloads }}"
+                           min="1" max="10"
+                           class="form-control">
+                    <p class="form-text">Maximum number of simultaneous downloads (1-10)</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="download_max_seeding_time">
+                        <i class="fas fa-clock"></i> Maximum Seeding Time (minutes)
+                    </label>
+                    <input type="number" 
+                           id="download_max_seeding_time" 
+                           name="download_max_seeding_time" 
+                           value="{{ download_config.max_seeding_time }}"
+                           min="0" max="10080"
+                           class="form-control">
+                    <p class="form-text">Stop seeding after this many minutes (0 = seed forever)</p>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- General Settings -->
+    <div class="tab-content" id="general-tab">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-sliders-h" style="color: var(--primary);"></i> General Settings
+                    </h3>
+                    <p class="card-subtitle">Configure general application preferences</p>
+                </div>
+            </div>
+
+            <form class="settings-form" id="generalForm">
+                <div class="form-group">
+                    <label class="form-label" for="theme">
+                        <i class="fas fa-palette"></i> Theme
+                    </label>
+                    <select id="theme" name="theme" class="form-control">
+                        <option value="dark" {% if general_config.theme == 'dark' %}selected{% endif %}>Dark</option>
+                        <option value="light" {% if general_config.theme == 'light' %}selected{% endif %}>Light</option>
+                        <option value="auto" {% if general_config.theme == 'auto' %}selected{% endif %}>Auto (System)</option>
+                    </select>
+                    <p class="form-text">Application color theme</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="language">
+                        <i class="fas fa-language"></i> Language
+                    </label>
+                    <select id="language" name="language" class="form-control">
+                        <option value="en" {% if general_config.language == 'en' %}selected{% endif %}>English</option>
+                        <option value="es" {% if general_config.language == 'es' %}selected{% endif %}>Spanish</option>
+                        <option value="fr" {% if general_config.language == 'fr' %}selected{% endif %}>French</option>
+                        <option value="de" {% if general_config.language == 'de' %}selected{% endif %}>German</option>
+                        <option value="ja" {% if general_config.language == 'ja' %}selected{% endif %}>Japanese</option>
+                    </select>
+                    <p class="form-text">Interface language</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="timezone">
+                        <i class="fas fa-globe"></i> Timezone
+                    </label>
+                    <input type="text"
+                           id="timezone"
+                           name="timezone"
+                           value="{{ general_config.timezone }}"
+                           placeholder="UTC"
+                           class="form-control">
+                    <p class="form-text">Timezone for displaying dates and times</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Notifications</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox"
+                                   id="notifications_enabled"
+                                   name="notifications_enabled"
+                                   {% if general_config.notifications_enabled %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Enable Notifications</span>
+                    </div>
+                    <p class="form-text">Show desktop notifications for downloads and updates</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Auto-Refresh Library</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox"
+                                   id="auto_refresh_library"
+                                   name="auto_refresh_library"
+                                   {% if network_config.auto_refresh_library %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Auto-refresh game library</span>
+                    </div>
+                    <p class="form-text">Automatically refresh library when new ROMs are added</p>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Database Management Settings -->
+    <div class="tab-content" id="database-tab">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-database" style="color: var(--primary);"></i> Database Management
+                    </h3>
+                    <p class="card-subtitle">Import, export, or reset the game catalog and library database</p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Current Database Status -->
+                <div class="settings-section" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+                    <h4><i class="fas fa-info-circle"></i> Current Database Status</h4>
+                    {% if db_info %}
+                    <div class="db-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <div class="stat-card" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px;">Total ROMs</div>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: var(--primary);">{{ "{:,}".format(db_info.rom_count) }}</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px;">Platforms</div>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: var(--secondary);">{{ db_info.platform_count }}</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px;">File Size</div>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: var(--info);">{{ db_info.size_gb }} GB</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h5 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Source Breakdown</h5>
+                        <div class="source-pills" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            {% for source, count in db_info.sources.items() %}
+                            <span class="badge" style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem;">
+                                {{ source }}: {{ "{:,}".format(count) }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="form-text" style="color: var(--error);">No database found or database is invalid.</p>
+                    {% endif %}
+                </div>
+
+                <div class="settings-section">
+                    <h4><i class="fas fa-file-import"></i> Import Database</h4>
+                    <p class="form-text">Upload a <code>.db</code>, <code>.db.gz</code>, or <code>.rommar</code> file to replace the current database. <strong>Warning: This will overwrite existing data.</strong></p>
+                    
+                    <form id="dbImportForm" class="settings-form" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label class="form-label" for="db_file">Select Database File</label>
+                            <input type="file" id="db_file" name="file" accept=".db,.db.gz,.rommar" class="form-control" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="importDbBtn">
+                                <i class="fas fa-upload"></i> Upload and Import
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="uploadProgressContainer" style="display: none; margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                        <div class="progress-info" style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px; color: var(--text-secondary);">
+                            <span id="uploadStatusText"><i class="fas fa-spinner fa-spin"></i> Uploading...</span>
+                            <span id="uploadSpeedText">0 KB/s</span>
+                        </div>
+                        <div class="progress" style="height: 10px; background: var(--bg-dark); border-radius: 5px; overflow: hidden; margin-bottom: 8px;">
+                            <div id="uploadProgressBar" class="progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.1s ease;"></div>
+                        </div>
+                        <div class="progress-stats" style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+                            <span id="uploadPercentageText">0%</span>
+                            <span id="uploadEstimateText">Time remaining: --</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section" style="margin-top: 20px;">
+                    <h4><i class="fas fa-file-export"></i> Export Database Backup</h4>
+                    <p class="form-text">Download a backup copy of your SQLite database file for safety or migration.</p>
+                    <div class="form-actions">
+                        <a href="/api/database/export" class="btn btn-secondary">
+                            <i class="fas fa-download"></i> Export Backup (.db)
+                        </a>
+                    </div>
+                </div>
+
+
+                <div class="settings-section" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <h4 style="color: var(--error);"><i class="fas fa-exclamation-triangle"></i> Danger Zone</h4>
+                    <p class="form-text">Wipe all data and reset the database to a clean state.</p>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-error" id="wipeDbBtn">
+                            <i class="fas fa-trash-alt"></i> Wipe Database
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata Settings -->
+    <div class="tab-content" id="metadata-tab">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">
+                        <i class="fas fa-tags" style="color: var(--primary);"></i> Metadata Sources
+                    </h3>
+                    <p class="card-subtitle">Configure external APIs for fetching game details on the fly</p>
+                </div>
+            </div>
+
+            <form class="settings-form" id="metadataForm">
+                <div class="settings-section" style="margin-bottom: 20px;">
+                    <h4><i class="fab fa-twitch" style="color: #9146FF;"></i> IGDB (Twitch API)</h4>
+                    <p class="form-text">Requires a free Twitch developer account (dev.twitch.tv)</p>
+
+                    <div class="form-group">
+                        <label class="form-label">Enable IGDB</label>
+                        <div class="switch-container">
+                            <label class="switch">
+                                <input type="checkbox" id="igdb_enabled" name="igdb_enabled" {% if metadata_config.igdb_enabled %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                            <span class="switch-label">Fetch data from IGDB</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="igdb_client_id"><i class="fas fa-id-badge"></i> Client ID</label>
+                        <input type="text" id="igdb_client_id" name="igdb_client_id" value="{{ metadata_config.igdb_client_id }}" class="form-control" placeholder="IGDB Client ID">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="igdb_client_secret"><i class="fas fa-key"></i> Client Secret</label>
+                        <input type="password" id="igdb_client_secret" name="igdb_client_secret" value="{{ metadata_config.igdb_client_secret }}" class="form-control" placeholder="IGDB Client Secret">
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary test-connection-btn" data-service="igdb" style="margin-top: 10px;">
+                        <i class="fas fa-plug"></i> Test IGDB Connection
+                    </button>
+                </div>
+
+                <div class="settings-section" style="padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <h4><i class="fas fa-gamepad" style="color: var(--warning);"></i> RAWG</h4>
+                    <p class="form-text">Requires a free RAWG developer API key (rawg.io/apidocs)</p>
+
+                    <div class="form-group">
+                        <label class="form-label">Enable RAWG</label>
+                        <div class="switch-container">
+                            <label class="switch">
+                                <input type="checkbox" id="rawg_enabled" name="rawg_enabled" {% if metadata_config.rawg_enabled %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                            <span class="switch-label">Fetch data from RAWG</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="rawg_api_key"><i class="fas fa-key"></i> API Key</label>
+                        <input type="password" id="rawg_api_key" name="rawg_api_key" value="{{ metadata_config.rawg_api_key }}" class="form-control" placeholder="RAWG API Key">
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary test-connection-btn" data-service="rawg" style="margin-top: 10px;">
+                        <i class="fas fa-plug"></i> Test RAWG Connection
+                    </button>
+                </div>
+
+                <div class="settings-section" style="padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <h4><i class="fas fa-sort-amount-down"></i> Source Priority Rules</h4>
+                    <p class="form-text">Comma-separated order of preference. Highest priority wins when merging. E.g. <code>igdb,rawg,local</code></p>
+                    <div class="form-group">
+                        <input type="text" id="metadata_source_priority" name="metadata_source_priority" value="{{ metadata_config.source_priority }}" class="form-control" placeholder="igdb,rawg,local">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show corresponding content
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === `${tabId}-tab`) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
+    
+    // Test connection buttons
+    document.querySelectorAll('.test-connection-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const service = this.getAttribute('data-service');
+            const form = this.closest('form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            this.disabled = true;
+            
+            fetch(`/api/settings/test/${service}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showNotification(`${service} connection successful!`, 'success');
+                } else {
+                    showNotification(`${service} connection failed: ${result.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification(`Connection test failed: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    });
+    
+    // Form submission
+    document.querySelectorAll('.settings-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            const tabId = this.closest('.tab-content').id.replace('-tab', '');
+            
+            // Convert checkbox values to strings
+            Object.keys(data).forEach(key => {
+                if (data[key] === 'on') {
+                    data[key] = 'true';
+                }
+            });
+            
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    category: tabId,
+                    settings: data
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showNotification('Settings saved successfully!', 'success');
+                } else {
+                    showNotification(`Failed to save settings: ${result.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification(`Failed to save settings: ${error.message}`, 'error');
+            });
+        });
+    });
+    
+    // Copy share URL
+    document.querySelector('.copy-url-btn')?.addEventListener('click', function() {
+        const shareUrl = document.getElementById('shareUrl').textContent;
+        navigator.clipboard.writeText(shareUrl)
+            .then(() => showNotification('Share URL copied to clipboard!', 'success'))
+            .catch(() => showNotification('Failed to copy URL', 'error'));
+    });
+
+    // Database Import
+    const dbImportForm = document.getElementById('dbImportForm');
+    if (dbImportForm) {
+        dbImportForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('db_file');
+            if (fileInput.files.length === 0) {
+                showNotification('Please select a file to upload.', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const importBtn = document.getElementById('importDbBtn');
+            const progressContainer = document.getElementById('uploadProgressContainer');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const statusText = document.getElementById('uploadStatusText');
+            const speedText = document.getElementById('uploadSpeedText');
+            const percentageText = document.getElementById('uploadPercentageText');
+            const estimateText = document.getElementById('uploadEstimateText');
+            
+            const originalText = importBtn.innerHTML;
+            importBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            
+            const xhr = new XMLHttpRequest();
+            const startTime = Date.now();
+            
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    const timeElapsed = (Date.now() - startTime) / 1000;
+                    const uploadSpeed = e.loaded / timeElapsed; // bytes per second
+                    
+                    progressBar.style.width = percentComplete + '%';
+                    percentageText.textContent = Math.round(percentComplete) + '%';
+                    
+                    // Format speed
+                    if (uploadSpeed > 1024 * 1024) {
+                        speedText.textContent = (uploadSpeed / (1024 * 1024)).toFixed(2) + ' MB/s';
+                    } else {
+                        speedText.textContent = (uploadSpeed / 1024).toFixed(2) + ' KB/s';
+                    }
+                    
+                    // Estimate time remaining
+                    const bytesRemaining = e.total - e.loaded;
+                    const secondsRemaining = bytesRemaining / uploadSpeed;
+                    if (secondsRemaining < 60) {
+                        estimateText.textContent = 'Time remaining: ' + Math.round(secondsRemaining) + 's';
+                    } else {
+                        estimateText.textContent = 'Time remaining: ' + Math.round(secondsRemaining / 60) + 'm ' + Math.round(secondsRemaining % 60) + 's';
+                    }
+                }
+            });
+            
+            xhr.addEventListener('load', function() {
+                try {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.success && result.task_id) {
+                        // Start polling for install progress
+                        pollImportStatus(result.task_id);
+                    } else {
+                        showNotification('Upload failed: ' + (result.message || 'Unknown error'), 'error');
+                        progressContainer.style.display = 'none';
+                        importBtn.disabled = false;
+                    }
+                } catch (error) {
+                    showNotification('Upload failed: Server returned an invalid response', 'error');
+                    progressContainer.style.display = 'none';
+                    importBtn.disabled = false;
+                }
+            });
+            
+            xhr.addEventListener('error', function() {
+                showNotification('Upload failed: Network error', 'error');
+                progressContainer.style.display = 'none';
+                importBtn.disabled = false;
+            });
+            
+            xhr.open('POST', '/api/database/import');
+            xhr.send(formData);
+            
+            xhr.onloadstart = function() {
+                statusText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            };
+        });
+    }
+
+    function pollImportStatus(taskId) {
+        const progressContainer = document.getElementById('uploadProgressContainer');
+        const progressBar = document.getElementById('uploadProgressBar');
+        const statusText = document.getElementById('uploadStatusText');
+        const percentageText = document.getElementById('uploadPercentageText');
+        const estimateText = document.getElementById('uploadEstimateText');
+        const speedText = document.getElementById('uploadSpeedText');
+
+        speedText.style.display = 'none'; // Speed not relevant during install
+        estimateText.style.display = 'none'; // Reset estimate
+
+        const interval = setInterval(() => {
+            fetch(`/api/database/import/status/${taskId}`)
+                .then(response => response.json())
+                .then(task => {
+                    if (task.status === 'installing') {
+                        statusText.innerHTML = `<i class="fas fa-cog fa-spin"></i> ${task.message || 'Installing...'}`;
+                        progressBar.style.width = task.progress + '%';
+                        percentageText.textContent = Math.round(task.progress) + '%';
+                    } else if (task.status === 'completed') {
+                        clearInterval(interval);
+                        statusText.innerHTML = '<i class="fas fa-check-circle" style="color: var(--primary);"></i> ' + task.message;
+                        progressBar.style.width = '100%';
+                        percentageText.textContent = '100%';
+                        showNotification('Database imported successfully! Application will restart.', 'success');
+                        setTimeout(() => window.location.reload(), 3000);
+                    } else if (task.status === 'failed') {
+                        clearInterval(interval);
+                        statusText.innerHTML = '<i class="fas fa-exclamation-circle" style="color: var(--error);"></i> ' + task.message;
+                        showNotification('Import failed: ' + task.message, 'error');
+                        document.getElementById('importDbBtn').disabled = false;
+                    }
+                })
+                .catch(error => {
+                    clearInterval(interval);
+                    showNotification('Error checking import status: ' + error.message, 'error');
+                    document.getElementById('importDbBtn').disabled = false;
+                });
+        }, 1000);
+    }
+
+    // Database Wipe
+    const wipeDbBtn = document.getElementById('wipeDbBtn');
+    if (wipeDbBtn) {
+        wipeDbBtn.addEventListener('click', function() {
+            if (confirm('ARE YOU SURE? This will permanently delete ALL data, including your library and settings. This cannot be undone.')) {
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wiping...';
+                this.disabled = true;
+                
+                fetch('/api/database/delete', {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        showNotification('Database wiped successfully!', 'success');
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        showNotification('Wipe failed: ' + result.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Wipe failed: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                });
+            }
+        });
+    }
+
+    // Update share URL when network settings change
+    function updateShareUrl() {
+        const networkForm = document.getElementById('networkForm');
+        if (!networkForm) return;
+        
+        const formData = new FormData(networkForm);
+        const data = Object.fromEntries(formData.entries());
+        const shareType = data.network_share_type || 'nfs';
+        const sharePath = data.network_share_path || '/data/roms';
+        
+        let shareUrl = '';
+        if (shareType === 'nfs') {
+            shareUrl = `nfs://${window.location.hostname}:2049${sharePath}`;
+        } else if (shareType === 'smb') {
+            shareUrl = `smb://${window.location.hostname}/roms`;
+        } else if (shareType === 'webdav') {
+            shareUrl = `http://${window.location.hostname}:5000/webdav${sharePath}`;
+        }
+        
+        document.getElementById('shareUrl').textContent = shareUrl;
+    }
+    
+    // Update share URL when network settings change
+    document.querySelectorAll('#networkForm input, #networkForm select').forEach(el => {
+        el.addEventListener('change', updateShareUrl);
+        el.addEventListener('input', updateShareUrl);
+    });
+    
+    // Initialize share URL
+    updateShareUrl();
+    
+    // Helper function to show notifications
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type}`;
+        notification.textContent = message;
+        
+        // Add to page
+        document.querySelector('.settings-container').prepend(notification);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+});
+</script>
+
+<style>
+.switch-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.switch-label {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.share-url-display {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.share-url {
+    flex: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--primary);
+    word-break: break-all;
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-light);
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+}
+</style>
+{% endblock %}

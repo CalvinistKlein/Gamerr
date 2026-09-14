@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  gamerr:
+    build: .
+    container_name: gamerr
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./config:/app/config
+      - ./static:/app/static
+      - ./templates:/app/templates
+      - roms_data:/data/roms
+      - gamerr_data:/app/instance
+    environment:
+      - DATABASE_URL=sqlite:////app/instance/romarr.db
+      - ROMS_PATH=/data/roms
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - METADATA_API_URL=${METADATA_API_URL:-https://api.gamerr.io/v1}
+      - PROWLARR_URL=${PROWLARR_URL:-http://prowlarr:9696}
+      - PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
+      - QBITTORRENT_URL=${QBITTORRENT_URL:-http://qbittorrent:8080}
+      - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME:-admin}
+      - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD:-adminadmin}
+    networks:
+      - arr_network
+
+  # Companion Indexer Service (Prowlarr)
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    ports:
+      - "9696:9696"
+    volumes:
+      - prowlarr_config:/config
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    networks:
+      - arr_network
+
+  # Companion Download Client (qBittorrent)
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    volumes:
+      - qbittorrent_config:/config
+      - roms_data:/data/roms
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - WEBUI_PORT=8080
+    networks:
+      - arr_network
+
+  # Optional Self-Hosted SkyHook Metadata Proxy Microservice
+  metadata-server:
+    profiles: ["metadata"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python scripts/metadata_server.py
+    container_name: gamerr_metadata
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - IGDB_CLIENT_ID=${IGDB_CLIENT_ID:-}
+      - IGDB_CLIENT_SECRET=${IGDB_CLIENT_SECRET:-}
+    networks:
+      - arr_network
+
+volumes:
+  gamerr_data:
+  roms_data:
+  prowlarr_config:
+  qbittorrent_config:
+
+networks:
+  arr_network:
+    driver: bridge

@@ -1,0 +1,51 @@
+# Large binary files, ISOs, ROM archives
+*.zip
+*.7z
+*.rar
+*.iso
+*.rommar
+*.bin
+*.cue
+*.img
+*.chd
+*.wbfs
+*.nsp
+*.xci
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Log files
+*.log
+
+# Python virtual environments & bytecode
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node modules & build dists
+node_modules/
+dist/
+build/
+
+# IDE & OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Large test/temp folders
+temp_extract/
+uploads/
+instance/
+Library/
+No-Intro Love Pack (Standard) (2026-03-09)/
+Mame_XML_Full_Lists_0.285_Arcade/
+libretro-database/

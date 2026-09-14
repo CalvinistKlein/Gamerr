@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog - Romarr{% endblock %}
+
+{% block content %}
+<div class="catalog-page">
+    <!-- Top Action & Filter Toolbar (*arr Suite Design) -->
+    <div class="arr-toolbar">
+        <form method="GET" action="{{ url_for('web.catalog') }}" class="arr-toolbar-left" id="catalogFilterForm">
+            <!-- Search Bar -->
+            <div class="arr-search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       name="q" 
+                       value="{{ query or '' }}" 
+                       placeholder="Filter catalog..." 
+                       id="catalogSearchInput">
+            </div>
+
+            <!-- Platform Filter -->
+            <select name="platform" class="arr-select" onchange="this.form.submit()">
+                <option value="">Platform: All</option>
+                {% for p in platforms %}
+                <option value="{{ p }}" {% if p == current_platform %}selected{% endif %}>
+                    {{ p }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <!-- Generation Filter (Console + PC titles from that era) -->
+            <select name="generation" class="arr-select" onchange="this.form.submit()">
+                <option value="">Generation: All</option>
+                {% for gen_id, gen_data in (generations|default({})).items() %}
+                <option value="{{ gen_id }}" {% if generation == gen_id %}selected{% endif %}>
+                    {{ gen_data.label }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <!-- Decade / Era Filter -->
+            <select name="decade" class="arr-select" onchange="this.form.submit()">
+                <option value="">Decade: All</option>
+                {% for d in decades|default([]) %}
+                <option value="{{ d }}" {% if decade == d %}selected{% endif %}>
+                    {{ d }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <!-- Sort By -->
+            <select name="sort" class="arr-select" onchange="this.form.submit()">
+                <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Sort: Popular</option>
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Sort: Newest</option>
+                <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Sort: Oldest</option>
+                <option value="title" {% if sort == 'title' %}selected{% endif %}>Sort: Title A-Z</option>
+                <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Sort: Rating</option>
+            </select>
+
+            <input type="hidden" name="view" value="{{ view }}">
+
+            {% if query or current_platform or decade or generation or sort != 'popular' %}
+            <a href="{{ url_for('web.catalog', view=view) }}" class="btn btn-sm btn-outline-secondary" title="Clear Filters" style="color: var(--arr-cyan); text-decoration: none; font-size: 0.82rem;">
+                <i class="fas fa-times"></i> Clear
+            </a>
+            {% endif %}
+        </form>
+
+        <div class="arr-toolbar-right">
+            <!-- View Mode Switcher -->
+            <div class="arr-view-toggle">
+                <a href="{{ url_for('web.catalog', q=query, platform=current_platform, decade=decade, generation=generation, sort=sort, view='posters', page=page) }}" 
+                   class="arr-view-btn {% if view != 'table' %}active{% endif %}" title="Poster Grid View">
+                    <i class="fas fa-th-large"></i> Posters
+                </a>
+                <a href="{{ url_for('web.catalog', q=query, platform=current_platform, decade=decade, generation=generation, sort=sort, view='table', page=page) }}" 
+                   class="arr-view-btn {% if view == 'table' %}active{% endif %}" title="Overview Table View">
+                    <i class="fas fa-bars"></i> Table
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Subheader -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-size: 0.85rem; color: var(--arr-text-muted);">
+        <div>
+            Showing <strong>{{ games|length }}</strong> of <strong>{{ total_count }}</strong> catalog games
+            {% if query %} matching "<strong>{{ query }}</strong>"{% endif %}
+            {% if current_platform %} on <strong>{{ current_platform }}</strong>{% endif %}
+            {% if generation %} in <strong>Gen {{ generation }}</strong>{% endif %}
+            {% if decade %} from the <strong>{{ decade }}</strong>{% endif %}
+        </div>
+        <div>
+            Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+        </div>
+    </div>
+
+    {% if games %}
+        {% if view == 'table' %}
+            <!-- ==================== TABLE VIEW ==================== -->
+            <div class="arr-table-container">
+                <table class="arr-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 36px; text-align: center;"><i class="fas fa-bookmark"></i></th>
+                            <th style="width: 50px;"></th>
+                            <th>Title</th>
+                            <th>Platform</th>
+                            <th>Year</th>
+                            <th>Genre</th>
+                            <th>Publisher</th>
+                            <th>Rating</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in games %}
+                        {% set is_monitored = game.title|lower in monitored_titles %}
+                        {% set in_library = game.title|lower in library_titles %}
+                        <tr>
+                            <td style="text-align: center;">
+                                <i class="fas fa-bookmark arr-table-bookmark {% if is_monitored %}monitored{% endif %}" 
+                                   title="{% if is_monitored %}Monitored / Wanted{% else %}Not Monitored{% endif %}"></i>
+                            </td>
+                            <td>
+                                {% if game.cover_image_url %}
+                                <img src="{{ game.cover_image_url }}" alt="{{ game.title }}" class="arr-table-thumb" loading="lazy">
+                                {% else %}
+                                <div class="arr-table-thumb" style="display: flex; align-items: center; justify-content: center; background: #161b22; color: #475569;">
+                                    <i class="fas fa-gamepad"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('web.catalog_game', game_id=game.id) }}" style="color: #fff; font-weight: 600; text-decoration: none;">
+                                    {{ game.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="arr-pill arr-pill-cyan">{{ game.platform }}</span>
+                            </td>
+                            <td>
+                                {% if game.release_year %}
+                                <span class="arr-pill" style="background: rgba(255,255,255,0.08);">{{ game.release_year }}</span>
+                                {% else %}
+                                <span style="color: var(--arr-text-subtle);">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="color: var(--arr-text-muted);">
+                                {{ (game.genre or 'Unknown').split(',')[0] }}
+                            </td>
+                            <td style="color: var(--arr-text-muted);">
+                                {{ game.publisher or '-' }}
+                            </td>
+                            <td>
+                                {% if game.rating %}
+                                <span style="color: #fbbf24; font-weight: 600;">
+                                    <i class="fas fa-star" style="font-size: 0.75rem;"></i> {{ game.rating }}
+                                </span>
+                                {% else %}
+                                <span style="color: var(--arr-text-subtle);">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; gap: 6px;">
+                                    <a href="{{ url_for('web.catalog_game', game_id=game.id) }}" class="arr-btn arr-btn-secondary" style="padding: 4px 10px; font-size: 0.78rem;" title="View Game Details">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <button type="button" class="arr-btn arr-btn-cyan" onclick="quickAddWanted({{ game.title|tojson }}, {{ game.platform|tojson }}, {{ (game.region or 'USA')|tojson }})" style="padding: 4px 10px; font-size: 0.78rem;" title="Monitor &amp; Search">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+            <!-- ==================== POSTER GRID VIEW ==================== -->
+            <div class="arr-poster-grid">
+                {% for game in games %}
+                {% set is_monitored = game.title|lower in monitored_titles %}
+                {% set in_library = game.title|lower in library_titles %}
+                <div class="arr-poster-card">
+                    <a href="{{ url_for('web.catalog_game', game_id=game.id) }}" class="arr-poster-link" title="{{ game.title }} ({{ game.release_year or 'N/A' }})"></a>
+                    
+                    <!-- Monitored Bookmark Ribbon (Sonarr/Radarr signature) -->
+                    <div class="arr-bookmark-ribbon {% if is_monitored %}monitored{% endif %}" title="{% if is_monitored %}Monitored in Wanted List{% else %}Unmonitored{% endif %}">
+                        <i class="fas {% if is_monitored %}fa-check{% else %}fa-bookmark{% endif %}"></i>
+                    </div>
+
+                    <!-- Top Right Badges: Platform -->
+                    <div class="arr-badge-top-right">
+                        <span class="arr-pill arr-pill-cyan">{{ game.platform }}</span>
+                    </div>
+
+                    <!-- Poster Artwork -->
+                    {% if game.cover_image_url %}
+                    <img src="{{ game.cover_image_url }}" alt="{{ game.title }}" class="arr-poster-img" loading="lazy">
+                    {% else %}
+                    <div class="arr-poster-placeholder">
+                        <i class="fas fa-gamepad"></i>
+                        <span style="font-size: 0.75rem; text-align: center; padding: 0 10px;">{{ game.platform }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Footer Info Overlay -->
+                    <div class="arr-poster-footer">
+                        <div class="arr-poster-title">{{ game.title }}</div>
+                        <div class="arr-poster-meta">
+                            <span class="arr-poster-year">{{ game.release_year or 'Unknown' }}</span>
+                            {% if game.rating %}
+                            <span class="arr-poster-rating">
+                                <i class="fas fa-star" style="font-size: 0.7rem;"></i> {{ game.rating }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Status Bar Line (Green for Library, Cyan for Wanted) -->
+                    <div class="arr-status-bar {% if in_library %}in-library{% elif is_monitored %}wanted{% endif %}"></div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Pagination Controls -->
+        {% if total_pages > 1 %}
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px;">
+            {% if page > 1 %}
+            <a href="{{ url_for('web.catalog', q=query, platform=current_platform, decade=decade, generation=generation, sort=sort, view=view, page=page-1) }}" class="arr-btn arr-btn-secondary">
+                <i class="fas fa-chevron-left"></i> Previous
+            </a>
+            {% endif %}
+
+            <span style="font-size: 0.85rem; color: var(--arr-text-muted); padding: 0 12px;">
+                Page {{ page }} of {{ total_pages }}
+            </span>
+
+            {% if page < total_pages %}
+            <a href="{{ url_for('web.catalog', q=query, platform=current_platform, decade=decade, generation=generation, sort=sort, view=view, page=page+1) }}" class="arr-btn arr-btn-secondary">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Empty State -->
+        <div style="text-align: center; padding: 60px 20px; background: var(--arr-bg-surface); border: 1px solid var(--arr-border); border-radius: 8px;">
+            <i class="fas fa-search fa-3x" style="color: var(--arr-text-subtle); margin-bottom: 16px;"></i>
+            <h3 style="color: #fff; margin-bottom: 8px;">No games match your filter criteria</h3>
+            <p style="color: var(--arr-text-muted); max-width: 480px; margin: 0 auto 20px auto;">
+                Try selecting a different generation, decade, or platform, or clear your search term.
+            </p>
+    {% endif %}
+</div>
+
+<script>
+function quickAddWanted(title, platform, region) {
+    fetch('/api/wanted', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            game_title: title,
+            platform: platform,
+            region_preference: region || 'USA',
+            priority: 2
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert('Added "' + title + '" to Wanted list! Automation service will monitor indexers.');
+        window.location.reload();
+    })
+    .catch(err => {
+        alert('Failed to add to wanted list.');
+    });
+}
+</script>
+{% endblock %}

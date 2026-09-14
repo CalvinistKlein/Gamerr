@@ -1,0 +1,759 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="downloads-container">
+    <div class="page-header">
+        <h1>Downloads</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="pauseAllButton">
+                <i class="fas fa-pause"></i> Pause All
+            </button>
+            <button class="btn btn-secondary" id="resumeAllButton">
+                <i class="fas fa-play"></i> Resume All
+            </button>
+            <button class="btn btn-danger" id="clearCompletedButton">
+                <i class="fas fa-trash"></i> Clear Completed
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Active Downloads</div>
+            <div class="card-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="Search downloads..." id="activeSearch">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-dropdown">
+                    <select id="statusFilter" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="downloading">Downloading</option>
+                        <option value="paused">Paused</option>
+                        <option value="queued">Queued</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table" id="activeDownloadsTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Progress</th>
+                        <th>Speed</th>
+                        <th>Size</th>
+                        <th>ETA</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if active_downloads %}
+                        {% for download in active_downloads %}
+                        <tr>
+                            <td>
+                                <div class="download-title">
+                                    <strong>{{ download.title }}</strong>
+                                    <div class="download-info">
+                                        <small class="text-muted">{{ download.platform }}</small>
+                                        <small class="text-muted">• Added: {{ download.added_date.strftime('%Y-%m-%d %H:%M') if download.added_date else 'N/A' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress-container">
+                                    <div class="progress-bar" style="width: {{ download.progress|default(0) }}%; background-color: {{ colors.get(download.platform|lower, '#28a745') }};">
+                                        <span class="progress-text">{{ download.progress|default(0) }}%</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ download.download_speed|default('N/A') }}</td>
+                            <td>{{ download.total_size|filesizeformat if download.total_size else 'N/A' }}</td>
+                            <td>{{ download.eta|default('N/A') }}</td>
+                            <td>
+                                <span class="status-badge status-{{ download.status|default('queued') }}">
+                                    {{ download.status|default('queued')|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    {% if download.status == 'downloading' %}
+                                    <button class="btn btn-icon btn-sm btn-pause" title="Pause" data-download-id="{{ download.id }}">
+                                        <i class="fas fa-pause"></i>
+                                    </button>
+                                    {% elif download.status == 'paused' %}
+                                    <button class="btn btn-icon btn-sm btn-resume" title="Resume" data-download-id="{{ download.id }}">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-icon btn-sm btn-cancel" title="Cancel" data-download-id="{{ download.id }}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <button class="btn btn-icon btn-sm btn-info" title="Details" data-download-id="{{ download.id }}">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <div class="empty-content">
+                                    <i class="fas fa-cloud-download-alt fa-3x"></i>
+                                    <h3>No active downloads</h3>
+                                    <p>Add games to your wanted list or import ROMs to start downloads.</p>
+                                    <div class="empty-actions">
+                                        <a href="{{ url_for('web.wanted') }}" class="btn btn-primary">
+                                            <i class="fas fa-star"></i> View Wanted List
+                                        </a>
+                                        <a href="{{ url_for('web.import_roms') }}" class="btn btn-secondary">
+                                            <i class="fas fa-file-import"></i> Import ROMs
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if active_downloads %}
+        <div class="card-footer">
+            <div class="stats-info">
+                <span class="stat-item">
+                    <i class="fas fa-download"></i> Total: {{ active_downloads|length }} active
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-tachometer-alt"></i> Total speed: {{ "N/A" }}
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-hdd"></i> Free space: {{ "N/A" }}
+                </span>
+            </div>
+            <div class="pagination-controls">
+                <button class="btn btn-sm" disabled>Previous</button>
+                <span class="page-info">Page 1 of 1</span>
+                <button class="btn btn-sm" disabled>Next</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <div class="card-title">Completed Downloads</div>
+            <div class="card-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="Search completed..." id="completedSearch">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table" id="completedDownloadsTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Platform</th>
+                        <th>Size</th>
+                        <th>Completed</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if completed_downloads %}
+                        {% for download in completed_downloads %}
+                        <tr>
+                            <td>
+                                <div class="download-title">
+                                    <strong>{{ download.title }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="platform-badge" style="background-color: {{ colors.get(download.platform|lower, '#6c757d') }};">
+                                    {{ download.platform }}
+                                </span>
+                            </td>
+                            <td>{{ download.total_size|filesizeformat if download.total_size else 'N/A' }}</td>
+                            <td>{{ download.completed_date.strftime('%Y-%m-%d %H:%M') if download.completed_date else 'N/A' }}</td>
+                            <td>
+                                <span class="status-badge status-{{ download.status|default('completed') }}">
+                                    {{ download.status|default('completed')|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-icon btn-sm btn-play" title="Play" data-download-id="{{ download.id }}">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="btn btn-icon btn-sm btn-move" title="Move to Library" data-download-id="{{ download.id }}">
+                                        <i class="fas fa-folder-plus"></i>
+                                    </button>
+                                    <button class="btn btn-icon btn-sm btn-delete" title="Delete" data-download-id="{{ download.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <div class="empty-content">
+                                    <i class="fas fa-check-circle fa-3x"></i>
+                                    <h3>No completed downloads</h3>
+                                    <p>Completed downloads will appear here.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if completed_downloads %}
+        <div class="card-footer">
+            <div class="stats-info">
+                <span class="stat-item">
+                    <i class="fas fa-check-circle"></i> Total: {{ completed_downloads|length }} completed
+                </span>
+                <span class="stat-item">
+                    <i class="fas fa-hdd"></i> Total size: {{ "N/A" }}
+                </span>
+            </div>
+            <div class="pagination-controls">
+                <button class="btn btn-sm" disabled>Previous</button>
+                <span class="page-info">Page 1 of 1</span>
+                <button class="btn btn-sm" disabled>Next</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <div class="card-title">Download Queue</div>
+        </div>
+        <div class="card-body">
+            <div class="queue-settings">
+                <div class="setting-item">
+                    <label class="setting-label">Max concurrent downloads</label>
+                    <input type="number" class="form-control" id="maxConcurrent" value="3" min="1" max="10">
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Download speed limit</label>
+                    <div class="speed-limit">
+                        <input type="number" class="form-control" id="speedLimit" value="0" min="0">
+                        <select class="form-control" id="speedUnit">
+                            <option value="KB">KB/s</option>
+                            <option value="MB" selected>MB/s</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Auto-import completed downloads</label>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="autoImport" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label">Enabled</span>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-actions">
+                <button class="btn btn-primary" id="saveQueueSettings">
+                    <i class="fas fa-save"></i> Save Queue Settings
+                </button>
+                <button class="btn btn-secondary" id="testConnection">
+                    <i class="fas fa-vial"></i> Test qBittorrent Connection
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.downloads-container {
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-box {
+    position: relative;
+    width: 250px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 8px 12px 8px 35px;
+    border: 1px solid #3a3f44;
+    border-radius: 4px;
+    background-color: #2a2e32;
+    color: #dee2e6;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+.filter-dropdown select {
+    width: 150px;
+}
+
+.download-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.download-info {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.progress-container {
+    width: 100%;
+    height: 20px;
+    background-color: #3a3f44;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.platform-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: white;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.status-downloading {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-paused {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-queued {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-error {
+    background-color: #dc3545;
+    color: white;
+}
+
+.status-completed {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-icon {
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    color: #6c757d;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-icon:hover {
+    background-color: #3a3f44;
+    color: #dee2e6;
+}
+
+.btn-pause:hover {
+    color: #ffc107;
+}
+
+.btn-resume:hover {
+    color: #28a745;
+}
+
+.btn-cancel:hover {
+    color: #dc3545;
+}
+
+.btn-info:hover {
+    color: #17a2b8;
+}
+
+.btn-play:hover {
+    color: #28a745;
+}
+
+.btn-move:hover {
+    color: #007bff;
+}
+
+.btn-delete:hover {
+    color: #dc3545;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.empty-content {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-content i {
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+.empty-content h3 {
+    margin: 10px 0;
+    color: #dee2e6;
+}
+
+.empty-content p {
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+.empty-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-top: 1px solid #3a3f44;
+    background-color: #2a2e32;
+}
+
+.stats-info {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-item {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.stat-item i {
+    margin-right: 5px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-info {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.queue-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-label {
+    font-weight: 600;
+    color: #dee2e6;
+}
+
+.speed-limit {
+    display: flex;
+    gap: 10px;
+}
+
+.speed-limit input {
+    flex: 1;
+}
+
+.speed-limit select {
+    width: 100px;
+}
+
+.switch-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #6c757d;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #28a745;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.switch-label {
+    color: #adb5bd;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.mt-4 {
+    margin-top: 1.5rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const activeSearch = document.getElementById('activeSearch');
+    const completedSearch = document.getElementById('completedSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const pauseAllButton = document.getElementById('pauseAllButton');
+    const resumeAllButton = document.getElementById('resumeAllButton');
+    const clearCompletedButton = document.getElementById('clearCompletedButton');
+    const saveQueueSettings = document.getElementById('saveQueueSettings');
+    const testConnection = document.getElementById('testConnection');
+    
+    // Filter active downloads
+    if (activeSearch && statusFilter) {
+        const activeRows = document.querySelectorAll('#activeDownloadsTable tbody tr');
+        
+        function filterActiveTable() {
+            const searchTerm = activeSearch.value.toLowerCase();
+            const statusValue = statusFilter.value.toLowerCase();
+            
+            activeRows.forEach(row => {
+                const title = row.cells[0].textContent.toLowerCase();
+                const status = row.cells[5].textContent.toLowerCase();
+                
+                const matchesSearch = searchTerm === '' || title.includes(searchTerm);
+                const matchesStatus = statusValue === '' || status.includes(statusValue);
+                
+                row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+            });
+        }
+        
+        activeSearch.addEventListener('input', filterActiveTable);
+        statusFilter.addEventListener('change', filterActiveTable);
+    }
+    
+    // Filter completed downloads
+    if (completedSearch) {
+        const completedRows = document.querySelectorAll('#completedDownloadsTable tbody tr');
+        
+        completedSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            completedRows.forEach(row => {
+                const title = row.cells[0].textContent.toLowerCase();
+                row.style.display = searchTerm === '' || title.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+    
+    // Button handlers
+    if (pauseAllButton) {
+        pauseAllButton.addEventListener('click', function() {
+            showNotification('Pausing all downloads...', 'info');
+        });
+    }
+    
+    if (resumeAllButton) {
+        resumeAllButton.addEventListener('click', function() {
+            showNotification('Resuming all downloads...', 'info');
+        });
+    }
+    
+    if (clearCompletedButton) {
+        clearCompletedButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all completed downloads?')) {
+                showNotification('Clearing completed downloads...', 'warning');
+            }
+        });
+    }
+    
+    // Action button handlers
+    document.querySelectorAll('.btn-pause, .btn-resume, .btn-cancel, .btn-info, .btn-play, .btn-move, .btn-delete').forEach(button => {
+        button.addEventListener('click', function() {
+            const downloadId = this.getAttribute('data-download-id');
+            const action = this.classList.contains('btn-pause') ? 'pause' :
+                          this.classList.contains('btn-resume') ? 'resume' :
+                          this.classList.contains('btn-cancel') ? 'cancel' :
+                          this.classList.contains('btn-info') ? 'info' :
+                          this.classList.contains('btn-play') ? 'play' :
+                          this.classList.contains('btn-move') ? 'move' : 'delete';
+            
+            showNotification(`${action.charAt(0).toUpperCase() + action.slice(1)} download ID: ${downloadId}`, 'info');
+        });
+    });
+    
+    // Save queue settings
+    if (saveQueueSettings) {
+        saveQueueSettings.addEventListener('click', function() {
+            const maxConcurrent = document.getElementById('maxConcurrent').value;
+            const speedLimit = document.getElementById('speedLimit').value;
+            const speedUnit = document.getElementById('speedUnit').value;
+            const autoImport = document.getElementById('autoImport').checked;
+            
+            showNotification('Queue settings saved successfully', 'success');
+        });
+    }
+    
+    // Test connection
+    if (testConnection) {
+        testConnection.addEventListener('click', function() {
+            showNotification('Testing qBittorrent connection...', 'info');
+        });
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+            <button class="notification-close">&times;</button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+        
+        // Close button
+        notification.querySelector('.notification-close').addEventListener('click', () => {
+            notification.remove();
+        });
+    }
+});
+</script>
+{% endblock %}

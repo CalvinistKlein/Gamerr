@@ -1,0 +1,28 @@
+{
+    "ui": {
+        "language": "en-US",
+        "date_format": "YYYY-MM-DD",
+        "time_format": "HH:mm",
+        "first_day_of_week": 1
+    },
+    "media": {
+        "naming_convention": "{Platform}/{Title} ({Year})",
+        "rescan_frequency": 60,
+        "recycle_bin": false,
+        "chmod": "0644",
+        "chown": ""
+    },
+    "security": {
+        "api_key": "",
+        "auth_enabled": false
+    },
+    "indexers": {
+        "prowlarr_url": "http://localhost:9696",
+        "prowlarr_api_key": ""
+    },
+    "downloaders": {
+        "qbittorrent_url": "http://localhost:8080",
+        "qbittorrent_user": "admin",
+        "qbittorrent_pass": "adminadmin"
+    }
+}

@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  romarr:
+    build: .
+    command: python app.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./config:/app/config
+      - ./static:/app/static
+      - ./templates:/app/templates
+      - roms_data:/data/roms
+      - romarr_data:/app/instance
+    environment:
+      - DATABASE_URL=sqlite:////app/instance/romarr.db
+      - ROMS_PATH=/data/roms
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - PROWLARR_URL=${PROWLARR_URL:-http://localhost:9696}
+      - PROWLARR_API_KEY=${PROWLARR_API_KEY}
+      - QBITTORRENT_URL=${QBITTORRENT_URL:-http://localhost:8080}
+      - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME:-admin}
+      - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD:-adminadmin}
+      - IGDB_CLIENT_ID=${IGDB_CLIENT_ID}
+      - IGDB_CLIENT_SECRET=${IGDB_CLIENT_SECRET}
+    restart: unless-stopped
+    networks:
+      - romarr_network
+
+volumes:
+  romarr_data:
+  roms_data:
+
+networks:
+  romarr_network:
+    driver: bridge
