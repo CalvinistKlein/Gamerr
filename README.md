@@ -10,15 +10,7 @@ It provides an end-to-end management pipeline that integrates with indexers via 
 
 This project was built and evolved with AI assistance from:
 - **Claude (Anthropic)**: Designed the initial core architecture, database schemas, API integration models, search-to-download pipeline specifications, and structural implementation plans.
-- **Gemini (Google DeepMind)**: Extended the platform to v2, engineered the zero-key SkyHook metadata proxy, implemented DAT file parsing and catalog ingestion, added batch operations, direct ROM upload mechanisms, system activity/event logging APIs, and full automated test auditing.
-
----
-
-## System Architecture Overview
-
-Gamerr is structured into modular builds:
-- **v2 (Current Active Architecture)**: Flask REST API, SQLAlchemy ORM, Sonarr/Radarr dark slate UI, zero-key SkyHook metadata client with local seed fallback, DAT file / MAME XML catalog ingestion, single/multi ROM web uploader, batch game management, 1G1R deduplication, and automated unit/integration audit suites.
-- **Romarr / v1 (Legacy Foundation)**: Original prototype services, RAWG and IGDB client integrations, initial SQLite schema models, and web UI templates.
+- **Gemini (Google DeepMind)**: Engineered the v2 system architecture, built the zero-key SkyHook metadata proxy, implemented DAT file parsing and catalog ingestion, added batch operations, direct ROM upload mechanisms, system activity/event logging APIs, and full automated test auditing.
 
 ---
 
@@ -69,7 +61,7 @@ Gamerr is structured into modular builds:
 ### 1. Run Stack
 ```bash
 git clone https://github.com/CalvinistKlein/Gamerr.git
-cd Gamerr/v2
+cd Gamerr
 docker compose up -d
 ```
 
@@ -88,7 +80,8 @@ docker compose up -d
 
 ### Environment Setup
 ```bash
-cd v2
+git clone https://github.com/CalvinistKlein/Gamerr.git
+cd Gamerr
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -101,8 +94,7 @@ python app.py
 
 Verify system integrity with the audit test suite:
 ```bash
-cd v2
-PYTHONPATH=. python -m unittest discover tests
+python3 -m unittest discover tests
 ```
 
 ---
